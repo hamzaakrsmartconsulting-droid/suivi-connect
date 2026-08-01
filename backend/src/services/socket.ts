@@ -35,12 +35,12 @@ export function initSocket(httpServer: HttpServer) {
 
     // WebRTC signaling relay — forward each event to the intended recipient
     socket.on('call_offer', ({ to, offer, callType, callerName }: {
-      to: string; offer: RTCSessionDescriptionInit; callType: string; callerName: string;
+      to: string; offer: any; callType: string; callerName: string;
     }) => {
       io!.to(`user:${to}`).emit('call_offer', { from: userId, offer, callType, callerName });
     });
 
-    socket.on('call_answer', ({ to, answer }: { to: string; answer: RTCSessionDescriptionInit }) => {
+    socket.on('call_answer', ({ to, answer }: { to: string; answer: any }) => {
       io!.to(`user:${to}`).emit('call_answer', { answer });
     });
 
@@ -52,7 +52,7 @@ export function initSocket(httpServer: HttpServer) {
       io!.to(`user:${to}`).emit('call_ended');
     });
 
-    socket.on('ice_candidate', ({ to, candidate }: { to: string; candidate: RTCIceCandidateInit }) => {
+    socket.on('ice_candidate', ({ to, candidate }: { to: string; candidate: any }) => {
       io!.to(`user:${to}`).emit('ice_candidate', { candidate });
     });
 

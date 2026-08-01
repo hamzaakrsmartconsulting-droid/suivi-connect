@@ -20,7 +20,13 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.19.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.13.2",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^7.0.4",
+    "@types/pdfkit": "^0.17.4",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -31,18 +37,11 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.1",
     "pdfkit": "^0.19.1",
+    "prisma": "^6.19.0",
     "socket.io": "^4.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "zod": "^4.4.3"
   },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.13.2",
-    "@types/nodemailer": "^7.0.4",
-    "@types/pdfkit": "^0.17.4",
-    "prisma": "^6.19.0",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  }
+  "devDependencies": {}
 }
