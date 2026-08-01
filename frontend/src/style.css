@@ -1,0 +1,205 @@
+/* ═══════════════════════════════════════════════
+   Design tokens & global styles — SuiviConnect
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* Color palette */
+  --c-primary:       #2563EB;
+  --c-primary-light: #EFF6FF;
+  --c-primary-dark:  #1D4ED8;
+  --c-secondary:     #10B981;
+  --c-secondary-lt:  #ECFDF5;
+  --c-danger:        #EF4444;
+  --c-danger-lt:     #FEF2F2;
+  --c-warning:       #F59E0B;
+  --c-warning-lt:    #FFFBEB;
+  --c-info:          #0EA5E9;
+  --c-info-lt:       #F0F9FF;
+
+  /* Neutrals */
+  --c-bg:        #F8FAFC;
+  --c-surface:   #FFFFFF;
+  --c-border:    #E2E8F0;
+  --c-border-lt: #F1F5F9;
+  --c-text:      #0F172A;
+  --c-text-2:    #334155;
+  --c-text-3:    #64748B;
+  --c-text-4:    #94A3B8;
+  --c-text-5:    #CBD5E1;
+
+  /* Spacing scale (multiples of 4px) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-9: 36px;
+  --sp-10: 40px;
+
+  /* Radii */
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-2xl: 24px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
+  --shadow-md: 0 4px 12px rgba(15,23,42,0.08), 0 8px 24px rgba(15,23,42,0.06);
+  --shadow-lg: 0 8px 24px rgba(15,23,42,0.10), 0 16px 48px rgba(15,23,42,0.08);
+  --shadow-xl: 0 16px 48px rgba(15,23,42,0.14), 0 32px 80px rgba(15,23,42,0.10);
+
+  /* Typography */
+  --font-base: 'Inter', 'Roboto', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+/* Note: do NOT reset padding globally — it breaks Vuetify v-main layout offsets */
+
+html, body {
+  font-family: var(--font-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--c-text-4); }
+
+/* ── Typography helpers ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-4);
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+/* ── Shared grid ── */
+.dash-grid {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+.dash-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dash-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dash-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1280px) {
+  .dash-grid--4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 960px) {
+  .dash-grid--3 { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid--2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .dash-grid--3,
+  .dash-grid--4 { grid-template-columns: 1fr; }
+}
+
+/* ── Card base ── */
+.premium-card {
+  background: var(--c-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-border-lt);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.premium-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ── Vuetify table overrides ── */
+.v-data-table .v-data-table__tr:nth-child(even) td { background: #FAFBFC; }
+.v-data-table .v-data-table__tr { height: 56px; }
+.v-card { font-family: var(--font-base) !important; }
+
+/* ── Page transitions ── */
+.fade-enter-active,
+.fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from,
+.fade-leave-to { opacity: 0; }
+
+/* ── Shared page header ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--c-border);
+  overflow: visible;
+}
+.page-header__text { flex: 1; min-width: 0; }
+.page-header__actions { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+.page-header__title {
+  font-size: 24px; font-weight: 800; color: var(--c-text);
+  letter-spacing: -0.03em; margin-bottom: 6px;
+}
+.page-header__sub { font-size: 14px; color: var(--c-text-3); font-weight: 500; }
+
+.add-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: white; border: none; border-radius: 11px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35); letter-spacing: -0.01em;
+  transition: opacity 0.15s, transform 0.15s;
+  flex-shrink: 0; white-space: nowrap;
+}
+.add-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+@media (max-width: 600px) {
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-header__actions { width: 100%; }
+  .add-btn { width: 100%; justify-content: center; }
+}
+
+/* ── Global print overrides ────────────────────────────────────────────────── */
+@media print {
+  /* Hide Vuetify shell */
+  .v-navigation-drawer,
+  .v-app-bar,
+  .v-overlay,
+  .v-snackbar,
+  .v-dialog { display: none !important; }
+
+  /* Make main content full-width */
+  .v-main { padding: 0 !important; margin: 0 !important; }
+  .v-main__wrap { padding: 0 !important; }
+
+  body { background: white !important; }
+
+  /* Page layout */
+  @page {
+    size: A4;
+    margin: 18mm 14mm;
+  }
+}

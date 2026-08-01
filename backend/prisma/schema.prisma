@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertType {
+  BLOOD_PRESSURE
+  LDL
+  WEIGHT
+  MEDICATION
+  ACTIVITY
+  GENERAL
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  VERY_HIGH
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String
+  role              Role
+  resetToken        String?
+  resetTokenExpires DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+  sentMessages   Message[]       @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  notifications  Notification[]
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PatientProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  nomComplet        String
+  age               Int
+  taille            Float
+  profession        String?
+  dateProcedure     DateTime
+  sejourReeducation String?
+  stadeRecommande   String   @default("Stade I")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  followUps       WeeklyFollowUp[]
+  medications     Medication[]
+  alerts          Alert[]
+  riskPredictions RiskPrediction[]
+  doctors         DoctorPatient[]
+  appointments    Appointment[]
+  healthGoals     HealthGoal[]
+  ordonnances     Ordonnance[]
+}
+
+model DoctorProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  nomComplet String
+  specialite String   @default("Cardiologie")
+  telephone  String?
+  adresse    String?
+  rppsNumber String?
+  signatureText String? // cursive display name for signature
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patients            DoctorPatient[]
+  appointments        Appointment[]
+  healthGoals         HealthGoal[]
+  prescribedMedications Medication[]  @relation("PrescribedMedications")
+  ordonnances         Ordonnance[]
+}
+
+model DoctorPatient {
+  id        String   @id @default(uuid())
+  doctorId  String
+  patientId String
+  createdAt DateTime @default(now())
+
+  doctor  DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, patientId])
+  @@index([doctorId])
+  @@index([patientId])
+}
+
+model WeeklyFollowUp {
+  id                String   @id @default(uuid())
+  patientId         String
+  semaine           DateTime
+  poids             Float
+  tensionSys        Int
+  tensionDia        Int
+  tabac             Boolean  @default(false)
+  diabete           Boolean  @default(false)
+  ldl               Float
+  medicamentsPris   Int
+  medicamentsTotal  Int
+  activiteMinutes   Int
+  notes             String?
+  doctorNote        String?
+  createdAt         DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, semaine])
+}
+
+model Medication {
+  id               String    @id @default(uuid())
+  patientId        String
+  nom              String
+  dosage           String
+  frequence        String
+  dateDebut        DateTime
+  dateFin          DateTime?
+  actif            Boolean   @default(true)
+  prescribedById   String?   // doctorProfile.id if prescribed by doctor
+  instructions     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  patient       PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  prescribedBy  DoctorProfile?       @relation("PrescribedMedications", fields: [prescribedById], references: [id], onDelete: SetNull)
+  reminders     MedicationReminder[]
+}
+
+model MedicationReminder {
+  id           String   @id @default(uuid())
+  medicationId String
+  heure        String
+  joursSemaine String
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  medication Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id        String        @id @default(uuid())
+  patientId String
+  type      AlertType
+  severite  AlertSeverity
+  message   String
+  lu        Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+}
+
+model RiskPrediction {
+  id        String    @id @default(uuid())
+  patientId String
+  score     Float
+  niveau    RiskLevel
+  facteurs  Json
+  createdAt DateTime  @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+}
+
+model Message {
+  id            String   @id @default(uuid())
+  expediteurId  String
+  destinataireId String
+  contenu       String
+  lu            Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  expediteur   User @relation("SentMessages", fields: [expediteurId], references: [id], onDelete: Cascade)
+  destinataire User @relation("ReceivedMessages", fields: [destinataireId], references: [id], onDelete: Cascade)
+
+  @@index([expediteurId, destinataireId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  titre     String
+  message   String
+  type      String
+  lu        Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  doctorId  String
+  patientId String
+  dateTime  DateTime
+  type      String   @default("consultation")
+  motif     String?
+  status    String   @default("proposed")
+  videoLink String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctor  DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, dateTime])
+  @@index([patientId, dateTime])
+}
+
+model HealthGoal {
+  id        String   @id @default(uuid())
+  patientId String
+  doctorId  String
+  type      String
+  label     String
+  target    Float
+  unit      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model Ordonnance {
+  id          String   @id @default(uuid())
+  patientId   String
+  doctorId    String
+  fileUrl     String   // relative path served statically
+  medications Json     // snapshot of prescribed medications
+  createdAt   DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+}

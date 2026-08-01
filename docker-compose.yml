@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: suivi-medicale-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: suivi
+      POSTGRES_PASSWORD: suivi_password
+      POSTGRES_DB: suivi_medicale
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

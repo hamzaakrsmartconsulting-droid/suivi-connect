@@ -1,0 +1,35 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Build outputs ──────────────────────────────────────────────────────────────
+dist/
+dist-ssr/
+
+# ── Environment files (contain secrets) ───────────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# ── Keep .env.production committed (no secrets, only placeholder URLs) ────────
+!frontend/.env.production
+
+# ── Generated PDFs (large binary files) ───────────────────────────────────────
+public/ordonnances/*.pdf
+
+# ── Prisma ────────────────────────────────────────────────────────────────────
+backend/node_modules/
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*

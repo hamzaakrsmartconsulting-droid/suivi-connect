@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: suivi-medicale-api
+    runtime: node
+    region: frankfurt       # closest to France
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+      # ── Set these in the Render dashboard → Environment ───────────────────
+      # DATABASE_URL   → your Neon PostgreSQL connection string
+      # JWT_SECRET     → random 64-char string
+      # JWT_REFRESH_SECRET → different random 64-char string
+      # FRONTEND_URL   → https://suivi-medicale.pages.dev  (your CF Pages URL)
+      # BACKEND_URL    → https://suivi-medicale-api.onrender.com
+      # SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM → optional
+
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
