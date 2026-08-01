@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && tsc || true",
-    "start": "node dist/index.js",
+    "build": "prisma generate",
+    "start": "node --import tsx/esm src/index.ts",
     "migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push"
