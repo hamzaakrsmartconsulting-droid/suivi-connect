@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Save } from '@lucide/vue'
 
 const emit = defineEmits<{ submit: [data: Record<string, unknown>] }>()
 
@@ -63,7 +64,8 @@ function handleSubmit() {
           <v-textarea v-model="form.notes" label="Notes hebdomadaires" rows="3" />
         </v-col>
         <v-col cols="12">
-          <v-btn type="submit" color="primary" :loading="loading" prepend-icon="mdi-content-save">
+          <v-btn type="submit" color="primary" :loading="loading">
+            <template #prepend><Save :size="16" stroke-width="1.8" /></template>
             Enregistrer le suivi
           </v-btn>
         </v-col>

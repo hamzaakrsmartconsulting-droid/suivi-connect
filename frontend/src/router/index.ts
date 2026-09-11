@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppLayout from '@/layouts/AppLayout.vue'
+import DoctorPatientsView from '@/views/doctor/PatientsView.vue'
+import DoctorDashboardView from '@/views/doctor/DashboardView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -40,24 +43,26 @@ const router = createRouter({
         { path: 'messages',        name: 'patient-messages',      component: () => import('@/views/patient/MessagesView.vue'),       meta: { title: 'Messages' } },
         { path: 'alertes',         name: 'patient-alerts',        component: () => import('@/views/patient/AlertsView.vue'),         meta: { title: 'Alertes' } },
         { path: 'rendez-vous',     name: 'patient-appointments',  component: () => import('@/views/patient/AppointmentsView.vue'),   meta: { title: 'Rendez-vous' } },
+        { path: 'guide',           name: 'patient-guide',         component: () => import('@/views/patient/GuideView.vue'),           meta: { title: 'Guide d\'utilisation' } },
       ],
     },
 
     // Doctor space
     {
       path: '/medecin',
-      component: () => import('@/layouts/AppLayout.vue'),
+      component: AppLayout,
       meta: { requiresAuth: true, role: 'DOCTOR' },
       children: [
         { path: '', redirect: '/medecin/tableau-de-bord' },
-        { path: 'tableau-de-bord', name: 'doctor-dashboard',     component: () => import('@/views/doctor/DashboardView.vue'),       meta: { title: 'Tableau de bord' } },
-        { path: 'patients',        name: 'doctor-patients',       component: () => import('@/views/doctor/PatientsView.vue'),        meta: { title: 'Patients' } },
+        { path: 'tableau-de-bord', name: 'doctor-dashboard',     component: DoctorDashboardView,       meta: { title: 'Tableau de bord' } },
+        { path: 'patients',        name: 'doctor-patients',       component: DoctorPatientsView,        meta: { title: 'Patients' } },
         { path: 'patients/:id',    name: 'doctor-patient-detail', component: () => import('@/views/doctor/PatientDetailView.vue'),   meta: { title: 'Détail patient' } },
         { path: 'alertes',         name: 'doctor-alerts',         component: () => import('@/views/doctor/AlertsView.vue'),          meta: { title: 'Alertes' } },
         { path: 'analytique',      name: 'doctor-analytics',      component: () => import('@/views/doctor/AnalyticsView.vue'),       meta: { title: 'Analytique' } },
         { path: 'messages',        name: 'doctor-messages',       component: () => import('@/views/doctor/MessagesView.vue'),        meta: { title: 'Messages' } },
         { path: 'rendez-vous',     name: 'doctor-appointments',   component: () => import('@/views/doctor/AppointmentsView.vue'),   meta: { title: 'Rendez-vous' } },
         { path: 'mon-profil',      name: 'doctor-profile',        component: () => import('@/views/doctor/ProfileView.vue'),         meta: { title: 'Mon profil' } },
+        { path: 'guide',           name: 'doctor-guide',          component: () => import('@/views/doctor/GuideView.vue'),            meta: { title: 'Guide d\'utilisation' } },
       ],
     },
   ],
@@ -69,13 +74,20 @@ function homeFor(role: string) {
   return '/patient/tableau-de-bord'
 }
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   auth.initFromStorage()
 
+  // Creating a new account must clear any existing session first.
+  // Otherwise "Créer un compte" immediately opens the previous dashboard.
+  if (to.name === 'register' && auth.isAuthenticated) {
+    await auth.logout()
+    return true
+  }
+
   const role = auth.user?.role
 
-  // Redirect authenticated users away from guest pages
+  // Redirect authenticated users away from guest pages (login, forgot password, …)
   if (to.meta.guest && auth.isAuthenticated && role) {
     return homeFor(role)
   }

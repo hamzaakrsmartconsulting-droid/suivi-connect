@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { type Component } from 'vue'
+import {
+  Info, AlertTriangle, AlertCircle, Octagon,
+  HeartPulse, Droplets, Scale, Pill, Activity,
+  CheckCircle2
+} from '@lucide/vue'
+
 defineProps<{
   alerts: {
     id: string
@@ -12,20 +19,20 @@ defineProps<{
 
 const emit = defineEmits<{ read: [id: string] }>()
 
-const severityMeta: Record<string, { bg: string; color: string; icon: string }> = {
-  LOW: { bg: '#F0F9FF', color: '#0EA5E9', icon: 'mdi-information-outline' },
-  MEDIUM: { bg: '#FFFBEB', color: '#F59E0B', icon: 'mdi-alert-outline' },
-  HIGH: { bg: '#FEF2F2', color: '#EF4444', icon: 'mdi-alert-circle-outline' },
-  CRITICAL: { bg: '#FEF2F2', color: '#DC2626', icon: 'mdi-alert-octagon-outline' },
+const severityMeta: Record<string, { bg: string; color: string; icon: Component }> = {
+  LOW:      { bg: '#F0F9FF', color: '#0EA5E9', icon: Info },
+  MEDIUM:   { bg: '#FFFBEB', color: '#F59E0B', icon: AlertTriangle },
+  HIGH:     { bg: '#FEF2F2', color: '#EF4444', icon: AlertCircle },
+  CRITICAL: { bg: '#FEF2F2', color: '#DC2626', icon: Octagon },
 }
 
-const typeIcon: Record<string, string> = {
-  BLOOD_PRESSURE: 'mdi-heart-pulse',
-  LDL: 'mdi-water-outline',
-  WEIGHT: 'mdi-scale-bathroom',
-  MEDICATION: 'mdi-pill',
-  ACTIVITY: 'mdi-run',
-  GENERAL: 'mdi-alert-outline',
+const typeIcon: Record<string, Component> = {
+  BLOOD_PRESSURE: HeartPulse,
+  LDL:            Droplets,
+  WEIGHT:         Scale,
+  MEDICATION:     Pill,
+  ACTIVITY:       Activity,
+  GENERAL:        AlertTriangle,
 }
 </script>
 
@@ -53,9 +60,11 @@ const typeIcon: Record<string, string> = {
             color: (severityMeta[alert.severite] || severityMeta.MEDIUM).color,
           }"
         >
-          <v-icon size="18">
-            {{ typeIcon[alert.type] || (severityMeta[alert.severite] || severityMeta.MEDIUM).icon }}
-          </v-icon>
+          <component
+            :is="typeIcon[alert.type] || (severityMeta[alert.severite] || severityMeta.MEDIUM).icon"
+            :size="18"
+            stroke-width="1.8"
+          />
         </div>
         <div class="alert-item__body">
           <p class="alert-item__msg">{{ alert.message }}</p>
@@ -65,7 +74,7 @@ const typeIcon: Record<string, string> = {
     </div>
 
     <div v-else class="alert-panel__empty">
-      <v-icon size="40" color="#10B981">mdi-check-circle-outline</v-icon>
+      <CheckCircle2 :size="40" color="#10B981" stroke-width="1.5" />
       <p>Aucune alerte active</p>
     </div>
   </div>

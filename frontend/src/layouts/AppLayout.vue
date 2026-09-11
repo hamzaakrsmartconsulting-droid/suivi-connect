@@ -8,7 +8,7 @@ import {
   LayoutDashboard, User, HeartPulse, Pill, FileBarChart2,
   MessageSquare, Bell, Users, AlertCircle, BarChart3, Globe,
   LogOut, ChevronDown, Menu, AlertTriangle, CheckCheck,
-  BellOff, Settings, CalendarDays, ShieldCheck,
+  BellOff, Settings, CalendarDays, ShieldCheck, HelpCircle,
 } from '@lucide/vue'
 
 const route  = useRoute()
@@ -46,6 +46,7 @@ const patientNav: NavItem[] = [
   { icon: MessageSquare,   label: 'Messages',           to: '/patient/messages',           section: 'Communication' },
   { icon: Bell,            label: 'Alertes',            to: '/patient/alertes',            section: null, badge: true },
   { icon: CalendarDays,    label: 'Rendez-vous',        to: '/patient/rendez-vous',        section: null },
+  { icon: HelpCircle,      label: 'Guide d\'utilisation', to: '/patient/guide',            section: 'Aide' },
 ]
 
 const doctorNav: NavItem[] = [
@@ -55,7 +56,8 @@ const doctorNav: NavItem[] = [
   { icon: AlertCircle,     label: 'Alertes',         to: '/medecin/alertes',         section: null, badge: true },
   { icon: BarChart3,       label: 'Analytique',      to: '/medecin/analytique',      section: null },
   { icon: MessageSquare,   label: 'Messages',        to: '/medecin/messages',        section: 'Communication' },
-  { icon: User,            label: 'Mon profil',      to: '/medecin/mon-profil',      section: null },
+  { icon: User,            label: 'Mon profil',        to: '/medecin/mon-profil',      section: null },
+  { icon: HelpCircle,      label: 'Guide d\'utilisation', to: '/medecin/guide',          section: 'Aide' },
 ]
 
 const overviewNav: NavItem[] = [
@@ -88,7 +90,7 @@ const navGroups = computed<NavGroup[]>(() => {
 })
 
 function isActive(to: string) {
-  return route.path === to || (to !== '/' && route.path.startsWith(to))
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 
 function toggleSidebar() {
@@ -126,14 +128,15 @@ onMounted(async () => {
     >
       <!-- Brand -->
       <div class="sb-brand" :class="{ 'sb-brand--rail': rail }">
-        <div class="sb-logo">
+        <!-- Rail: icon-only logo mark -->
+        <div v-if="rail" class="sb-logo">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M3 12h4l2-5 4 10 2-5h6" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <div v-if="!rail" class="sb-brand__text">
-          <span class="sb-brand__name">SuiviConnect</span>
-          <span class="sb-brand__tag">Suivi médical connecté</span>
+        <!-- Expanded: full logo image -->
+        <div v-else class="sb-logo-wrap">
+          <img src="/logo.png" alt="SuiviConnect" class="sb-logo-img" />
         </div>
       </div>
 
@@ -306,10 +309,8 @@ onMounted(async () => {
     <!-- ═══════ Main ═══════ -->
     <v-main class="app-main">
       <div class="app-main__inner">
-        <router-view v-slot="{ Component }">
-          <Transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </Transition>
+        <router-view v-slot="{ Component, route: r }">
+          <component :is="Component" :key="r.path" />
         </router-view>
       </div>
     </v-main>
@@ -326,109 +327,130 @@ onMounted(async () => {
 
 /* ── Sidebar ── */
 .sidebar {
-  background: linear-gradient(180deg, #0B1120 0%, #0F172A 100%) !important;
-  border-right: 1px solid rgba(255,255,255,0.06) !important;
+  background: #0F172A !important;
+  border-right: 1px solid rgba(255,255,255,0.05) !important;
 }
 
 /* Brand */
 .sb-brand {
-  display: flex; align-items: center; gap: 12px;
-  padding: 20px 16px 14px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px 16px; overflow: hidden;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 8px;
 }
-.sb-brand--rail { justify-content: center; padding: 20px 0 14px; }
+.sb-brand--rail { padding: 14px 0; }
 
 .sb-logo {
-  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
-  box-shadow: 0 4px 14px rgba(59,130,246,0.45);
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: #1677C8;
   display: flex; align-items: center; justify-content: center;
 }
+.sb-logo-wrap {
+  display: flex; align-items: center; justify-content: center;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+.sb-logo-img {
+  height: 40px; width: auto; max-width: 150px;
+  object-fit: contain; display: block;
+}
 .sb-brand__text { display: flex; flex-direction: column; min-width: 0; }
-.sb-brand__name { font-size: 16px; font-weight: 800; color: #F8FAFC; letter-spacing: -0.04em; line-height: 1.2; }
-.sb-brand__tag  { font-size: 10px; color: #475569; font-weight: 500; margin-top: 2px; }
+.sb-brand__name { font-size: 15px; font-weight: 800; color: #F1F5F9; letter-spacing: -0.03em; line-height: 1.2; }
+.sb-brand__tag  { font-size: 10px; color: #334155; font-weight: 500; margin-top: 1px; letter-spacing: 0.01em; }
 
 /* Role */
 .sb-role {
   display: flex; align-items: center; gap: 8px;
-  margin: 0 16px 12px; padding: 8px 12px;
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 10px;
+  margin: 0 12px 10px; padding: 7px 11px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 9px;
 }
-.sb-role__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.sb-role__dot--blue   { background: #60A5FA; box-shadow: 0 0 8px rgba(96,165,250,0.7); }
-.sb-role__dot--green  { background: #34D399; box-shadow: 0 0 8px rgba(52,211,153,0.7); }
-.sb-role__dot--purple { background: #A78BFA; box-shadow: 0 0 8px rgba(167,139,250,0.7); }
-.sb-role__label { font-size: 11px; font-weight: 600; color: #64748B; letter-spacing: 0.03em; }
+.sb-role__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sb-role__dot--blue   { background: #60A5FA; }
+.sb-role__dot--green  { background: #34D399; }
+.sb-role__dot--purple { background: #A78BFA; }
+.sb-role__label { font-size: 11px; font-weight: 600; color: #475569; letter-spacing: 0.02em; text-transform: uppercase; }
 
 /* Nav */
-.sb-nav { flex: 1; padding: 6px 12px; overflow-y: auto; overflow-x: hidden; }
-.sb-nav--rail { padding: 6px 8px; }
+.sb-nav { flex: 1; padding: 4px 10px; overflow-y: auto; overflow-x: hidden; }
+.sb-nav--rail { padding: 4px 8px; }
 .sb-nav::-webkit-scrollbar { width: 3px; }
-.sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 
 .sb-group-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: #334155;
-  padding: 14px 10px 6px; margin: 0;
+  padding: 16px 10px 5px; margin: 0;
 }
 
 .sb-link {
-  display: flex; align-items: center; gap: 11px;
-  padding: 10px 12px; border-radius: 11px; margin-bottom: 3px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 9px; margin-bottom: 2px;
   color: #64748B; text-decoration: none;
-  font-size: 14px; font-weight: 500;
-  transition: background 0.13s, color 0.13s;
+  font-size: 13.5px; font-weight: 500;
+  transition: background 0.12s, color 0.12s;
   position: relative;
 }
 .sb-link--rail { justify-content: center; padding: 10px; gap: 0; }
-.sb-link:hover { background: rgba(255,255,255,0.06); color: #CBD5E1; }
-.sb-link--active { background: rgba(37,99,235,0.15); color: #93C5FD; font-weight: 600; }
+.sb-link:hover { background: rgba(255,255,255,0.05); color: #94A3B8; }
+.sb-link--active {
+  background: rgba(22,119,200,0.14);
+  color: #93C5FD;
+  font-weight: 650;
+}
+.sb-link--active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: #1677C8;
+}
 
 .sb-link__icon-wrap {
-  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.13s;
+  transition: background 0.12s;
 }
 .sb-link--active .sb-link__icon-wrap,
-.sb-link__icon-wrap--active {
-  background: rgba(37,99,235,0.25);
-}
+.sb-link__icon-wrap--active { background: rgba(22,119,200,0.2); }
 .sb-link__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sb-badge {
-  min-width: 20px; height: 20px; border-radius: 10px;
+  min-width: 19px; height: 19px; border-radius: 9px;
   background: #EF4444; color: white;
   font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0;
 }
 .sb-badge--rail {
-  position: absolute; top: 6px; right: 6px;
-  min-width: 16px; height: 16px; font-size: 9px; padding: 0 3px;
+  position: absolute; top: 5px; right: 5px;
+  min-width: 15px; height: 15px; font-size: 9px; padding: 0 3px;
 }
 
 /* Footer */
-.sb-footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 12px; }
-.sb-footer--rail { padding: 12px 8px; }
+.sb-footer { border-top: 1px solid rgba(255,255,255,0.05); padding: 10px; }
+.sb-footer--rail { padding: 10px 8px; }
 
-.sb-user { display: flex; align-items: center; gap: 10px; padding: 4px 4px 12px; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 4px 4px 10px; }
 .sb-user__avatar {
-  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #3B82F6, #7C3AED);
-  color: white; font-size: 14px; font-weight: 700;
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+  background: #1677C8;
+  color: white; font-size: 13px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
-.sb-user__name { font-size: 13px; font-weight: 600; color: #E2E8F0; margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sb-user__role { font-size: 11px; color: #475569; margin: 0; }
+.sb-user__name { font-size: 13px; font-weight: 600; color: #CBD5E1; margin: 0 0 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-user__role { font-size: 11px; color: #334155; margin: 0; font-weight: 500; }
 
 .sb-logout {
   display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 10px 12px;
-  background: transparent; border: none; border-radius: 10px;
-  color: #475569; font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background 0.13s, color 0.13s;
+  width: 100%; padding: 9px 11px;
+  background: transparent; border: none; border-radius: 9px;
+  color: #334155; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background 0.12s, color 0.12s; font-family: inherit;
 }
 .sb-logout--rail { justify-content: center; padding: 10px; }
-.sb-logout:hover { background: rgba(239,68,68,0.12); color: #F87171; }
+.sb-logout:hover { background: rgba(239,68,68,0.1); color: #F87171; }
 
 /* ── Top bar ── */
 .topbar {

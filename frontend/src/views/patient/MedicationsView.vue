@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Plus, Pill, Clock, CalendarCheck, CalendarX, Pencil, Trash2, Check, X, CheckCircle, AlertCircle, Download, FileText } from '@lucide/vue'
+import { Pill, Clock, CalendarCheck, CalendarX, Download, FileText } from '@lucide/vue'
 import api from '@/services/api'
-import { useNotificationStore } from '@/stores/notifications'
 
 interface Medication {
   id: string; nom: string; dosage: string; frequence: string
@@ -17,28 +16,12 @@ interface Ordonnance {
   doctor: { nomComplet: string; specialite: string }
 }
 
-const notifStore  = useNotificationStore()
 const medications = ref<Medication[]>([])
 const ordonnances = ref<Ordonnance[]>([])
 const loading     = ref(true)
-const dialog      = ref(false)
-const saving      = ref(false)
-const editing     = ref<Medication | null>(null)
-const toast       = ref<{ type: 'success' | 'error'; msg: string } | null>(null)
-
-const form = ref({
-  nom: '', dosage: '', frequence: '',
-  dateDebut: new Date().toISOString().split('T')[0],
-  dateFin: '', actif: true,
-})
 
 const activeMeds   = computed(() => medications.value.filter(m => m.actif))
 const inactiveMeds = computed(() => medications.value.filter(m => !m.actif))
-
-function showToast(type: 'success' | 'error', msg: string) {
-  toast.value = { type, msg }
-  setTimeout(() => { toast.value = null }, 3200)
-}
 
 async function loadMedications() {
   loading.value = true
@@ -54,75 +37,18 @@ async function loadMedications() {
   }
 }
 
-function openAdd() {
-  editing.value = null
-  form.value = { nom: '', dosage: '', frequence: '', dateDebut: new Date().toISOString().split('T')[0], dateFin: '', actif: true }
-  dialog.value = true
-}
-
-function openEdit(med: Medication) {
-  editing.value = med
-  form.value = {
-    nom: med.nom, dosage: med.dosage, frequence: med.frequence,
-    dateDebut: med.dateDebut.split('T')[0],
-    dateFin: med.dateFin?.split('T')[0] || '',
-    actif: med.actif,
-  }
-  dialog.value = true
-}
-
-async function save() {
-  saving.value = true
-  try {
-    if (editing.value) {
-      await api.put(`/patient/medications/${editing.value.id}`, form.value)
-      showToast('success', 'Médicament modifié avec succès')
-    } else {
-      await api.post('/patient/medications', form.value)
-      showToast('success', 'Médicament ajouté avec succès')
-    }
-    dialog.value = false
-    await loadMedications()
-  } catch { showToast('error', 'Erreur lors de l\'enregistrement') }
-  finally { saving.value = false }
-}
-
-async function remove(id: string) {
-  if (!confirm('Supprimer ce médicament ?')) return
-  try {
-    await api.delete(`/patient/medications/${id}`)
-    showToast('success', 'Médicament supprimé')
-    await loadMedications()
-  } catch { showToast('error', 'Erreur lors de la suppression') }
-}
-
 onMounted(loadMedications)
 </script>
 
 <template>
   <div class="meds-page">
 
-    <!-- Toast -->
-    <Transition name="toast">
-      <div v-if="toast" class="toast" :class="`toast--${toast.type}`">
-        <CheckCircle v-if="toast.type === 'success'" :size="15" :stroke-width="2" />
-        <AlertCircle v-else :size="15" :stroke-width="2" />
-        {{ toast.msg }}
-      </div>
-    </Transition>
-
     <!-- Header -->
     <div class="page-header">
       <div class="page-header__text">
         <p class="section-label">Espace patient</p>
-        <h1 class="page-header__title">Gestion des médicaments</h1>
+        <h1 class="page-header__title">Mes médicaments</h1>
         <p class="page-header__sub">{{ medications.length }} médicament{{ medications.length !== 1 ? 's' : '' }} au total · {{ activeMeds.length }} actif{{ activeMeds.length !== 1 ? 's' : '' }}</p>
-      </div>
-      <div class="page-header__actions">
-        <button class="add-btn" @click="openAdd">
-          <Plus :size="16" :stroke-width="2.5" />
-          Ajouter un médicament
-        </button>
       </div>
     </div>
 
@@ -136,11 +62,8 @@ onMounted(loadMedications)
       <div class="empty-state__icon">
         <Pill :size="36" :stroke-width="1.5" color="#93C5FD" />
       </div>
-      <p class="empty-state__title">Aucun médicament</p>
-      <p class="empty-state__sub">Ajoutez votre première ordonnance pour commencer le suivi</p>
-      <button class="add-btn" @click="openAdd">
-        <Plus :size="15" :stroke-width="2.5" /> Ajouter
-      </button>
+      <p class="empty-state__title">Aucun médicament prescrit</p>
+      <p class="empty-state__sub">Vos médicaments apparaîtront ici une fois prescrits par votre médecin</p>
     </div>
 
     <template v-else>
@@ -177,14 +100,6 @@ onMounted(loadMedications)
                 </div>
               </div>
 
-              <div class="med-card__actions">
-                <button class="med-action med-action--edit" @click="openEdit(med)">
-                  <Pencil :size="13" :stroke-width="2" /> Modifier
-                </button>
-                <button class="med-action med-action--delete" @click="remove(med.id)">
-                  <Trash2 :size="13" :stroke-width="2" /> Supprimer
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -207,80 +122,12 @@ onMounted(loadMedications)
                 </div>
                 <span class="med-card__inactive-badge">Terminé</span>
               </div>
-              <div class="med-card__actions">
-                <button class="med-action med-action--edit" @click="openEdit(med)">
-                  <Pencil :size="13" :stroke-width="2" /> Modifier
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </section>
     </template>
 
-    <!-- Dialog -->
-    <Teleport to="body">
-      <Transition name="dialog">
-        <div v-if="dialog" class="dialog-overlay" @click.self="dialog = false">
-          <div class="modal">
-            <div class="modal__header">
-              <div class="modal__icon">
-                <Pill :size="20" :stroke-width="1.75" color="white" />
-              </div>
-              <div>
-                <p class="modal__title">{{ editing ? 'Modifier le médicament' : 'Ajouter un médicament' }}</p>
-                <p class="modal__sub">Renseignez les informations de l'ordonnance</p>
-              </div>
-              <button class="modal__close" @click="dialog = false">
-                <X :size="18" :stroke-width="2" color="#64748B" />
-              </button>
-            </div>
-
-            <div class="modal__body">
-              <div class="modal-field">
-                <label>Nom du médicament</label>
-                <div class="field__wrap"><input v-model="form.nom" type="text" placeholder="ex : Bisoprolol" class="field__input" /></div>
-              </div>
-              <div class="modal-grid">
-                <div class="modal-field">
-                  <label>Dosage</label>
-                  <div class="field__wrap"><input v-model="form.dosage" type="text" placeholder="ex : 5mg" class="field__input" /></div>
-                </div>
-                <div class="modal-field">
-                  <label>Fréquence</label>
-                  <div class="field__wrap"><input v-model="form.frequence" type="text" placeholder="ex : 1x/jour" class="field__input" /></div>
-                </div>
-              </div>
-              <div class="modal-grid">
-                <div class="modal-field">
-                  <label>Date de début</label>
-                  <div class="field__wrap"><input v-model="form.dateDebut" type="date" class="field__input" /></div>
-                </div>
-                <div class="modal-field">
-                  <label>Date de fin (optionnel)</label>
-                  <div class="field__wrap"><input v-model="form.dateFin" type="date" class="field__input" /></div>
-                </div>
-              </div>
-              <div class="modal-toggle">
-                <span class="modal-toggle__label">Traitement actif</span>
-                <button type="button" class="toggle-switch" :class="{ 'toggle-switch--on': form.actif }" @click="form.actif = !form.actif">
-                  <span class="toggle-switch__knob" />
-                </button>
-              </div>
-            </div>
-
-            <div class="modal__footer">
-              <button class="modal-cancel" @click="dialog = false">Annuler</button>
-              <button class="submit-btn" :disabled="saving" @click="save">
-                <svg v-if="saving" class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/><path d="M12 2a10 10 0 0 1 10 10" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
-                <Check v-else :size="15" :stroke-width="2.5" />
-                {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
   <!-- ── ORDONNANCES RECEIVED ─────────────────────────────────────────────────── -->
   <section class="ordo-section">
@@ -393,18 +240,6 @@ onMounted(loadMedications)
 .med-card__details { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
 .med-card__detail { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; font-weight: 500; }
 
-.med-card__actions { display: flex; gap: 8px; }
-.med-action {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 8px; border: 1px solid;
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.13s;
-  background: transparent;
-}
-.med-action--edit { border-color: #BFDBFE; color: #2563EB; }
-.med-action--edit:hover { background: #EFF6FF; }
-.med-action--delete { border-color: #FECACA; color: #EF4444; }
-.med-action--delete:hover { background: #FEF2F2; }
-
 /* Field common (shared with FollowUpView pattern) */
 .field__wrap {
   display: flex; align-items: center;
@@ -417,82 +252,6 @@ onMounted(loadMedications)
   font-size: 14px; font-weight: 500; color: #0F172A;
   padding: 11px 14px; font-family: 'Inter', sans-serif; width: 100%;
 }
-
-/* Dialog */
-.dialog-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(15,23,42,0.5); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
-}
-.dialog-enter-active, .dialog-leave-active { transition: opacity 0.2s; }
-.dialog-enter-active .modal, .dialog-leave-active .modal { transition: opacity 0.2s, transform 0.2s; }
-.dialog-enter-from, .dialog-leave-to { opacity: 0; }
-.dialog-enter-from .modal, .dialog-leave-to .modal { opacity: 0; transform: scale(0.95) translateY(8px); }
-
-.modal {
-  background: #FFFFFF; border-radius: 20px; width: 100%; max-width: 520px;
-  box-shadow: 0 24px 80px rgba(15,23,42,0.25); overflow: hidden;
-}
-
-.modal__header {
-  display: flex; align-items: flex-start; gap: 14px;
-  padding: 24px 24px 20px; border-bottom: 1px solid #F1F5F9;
-}
-.modal__icon {
-  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-  background: linear-gradient(135deg, #2563EB, #1D4ED8);
-  display: flex; align-items: center; justify-content: center;
-}
-.modal__title { font-size: 16px; font-weight: 800; color: #0F172A; margin: 0 0 3px; }
-.modal__sub   { font-size: 13px; color: #64748B; margin: 0; }
-.modal__close { margin-left: auto; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.13s; }
-.modal__close:hover { background: #F1F5F9; }
-
-.modal__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-.modal-field { display: flex; flex-direction: column; gap: 6px; }
-.modal-field label { font-size: 13px; font-weight: 600; color: #374151; }
-.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-.modal-toggle {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; background: #F8FAFC; border-radius: 10px;
-}
-.modal-toggle__label { font-size: 14px; font-weight: 600; color: #0F172A; }
-
-.toggle-switch {
-  width: 44px; height: 24px; border-radius: 12px; background: #E2E8F0;
-  border: none; cursor: pointer; position: relative; transition: background 0.2s;
-  flex-shrink: 0;
-}
-.toggle-switch--on { background: #2563EB; }
-.toggle-switch__knob {
-  position: absolute; top: 3px; left: 3px;
-  width: 18px; height: 18px; border-radius: 50%; background: white;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: transform 0.2s;
-}
-.toggle-switch--on .toggle-switch__knob { transform: translateX(20px); }
-
-.modal__footer {
-  padding: 16px 24px 24px; display: flex; justify-content: flex-end; gap: 10px;
-}
-.modal-cancel {
-  padding: 10px 20px; background: transparent; border: 1.5px solid #E2E8F0;
-  border-radius: 10px; font-size: 14px; font-weight: 600; color: #64748B;
-  cursor: pointer; transition: background 0.13s;
-}
-.modal-cancel:hover { background: #F8FAFC; }
-
-.submit-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 22px; background: linear-gradient(135deg, #2563EB, #1D4ED8);
-  color: white; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 700; cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37,99,235,0.35); transition: opacity 0.15s;
-}
-.submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-
-.spin { animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Ordonnances ─────────────────────────────────────────────────────────── */
 .ordo-section {
@@ -541,11 +300,16 @@ onMounted(loadMedications)
 }
 
 .ordo-download-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 10px 18px; border-radius: 10px;
-  background: #2563EB; color: white; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 10px;
+  background: #0D9488; color: white; text-decoration: none;
   font-size: 13px; font-weight: 700; flex-shrink: 0;
-  transition: opacity 0.15s;
+  box-shadow: 0 4px 12px rgba(13,148,136,0.28);
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
 }
-.ordo-download-btn:hover { opacity: 0.88; }
+.ordo-download-btn:hover {
+  background: #0B7A70;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(13,148,136,0.36);
+}
 </style>

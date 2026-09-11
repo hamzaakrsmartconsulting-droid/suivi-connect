@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Plus, Search, Pencil, Trash2 } from '@lucide/vue'
 
 interface Medication {
   id: string
@@ -37,19 +38,21 @@ const search = ref('')
   <v-card>
     <v-card-title class="d-flex align-center justify-space-between pa-4">
       <span>Médicaments</span>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="emit('add')">
+      <v-btn color="primary" @click="emit('add')">
+        <template #prepend><Plus :size="16" stroke-width="2" /></template>
         Ajouter
       </v-btn>
     </v-card-title>
     <v-text-field
       v-model="search"
-      prepend-inner-icon="mdi-magnify"
       label="Rechercher"
       single-line
       hide-details
       class="px-4 pb-2"
       density="compact"
-    />
+    >
+      <template #prepend-inner><Search :size="16" stroke-width="1.8" style="opacity:0.5" /></template>
+    </v-text-field>
     <v-data-table
       :headers="headers"
       :items="medications"
@@ -67,10 +70,10 @@ const search = ref('')
       </template>
       <template #item.actions="{ item }">
         <v-btn icon size="small" variant="text" @click="emit('edit', item)">
-          <v-icon>mdi-pencil</v-icon>
+          <Pencil :size="16" stroke-width="1.8" />
         </v-btn>
         <v-btn icon size="small" variant="text" color="error" @click="emit('delete', item.id)">
-          <v-icon>mdi-delete</v-icon>
+          <Trash2 :size="16" stroke-width="1.8" />
         </v-btn>
       </template>
     </v-data-table>

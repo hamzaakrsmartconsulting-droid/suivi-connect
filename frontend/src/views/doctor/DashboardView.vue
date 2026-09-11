@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { ensureConnected } from '@/services/socket'
+import PatientAvatar from '@/components/ui/PatientAvatar.vue'
 
 interface Stats { totalPatients: number; activeAlerts: number; highRiskCount: number; rdvAujourdhui: number }
 interface HighRiskPatient { id: string; nomComplet: string; risk: { niveau: string; score: number } }
@@ -190,7 +191,7 @@ onUnmounted(() => {
           </div>
           <div v-if="highRisk.length" class="patient-list">
             <div v-for="p in highRisk" :key="p.id" class="p-row" @click="router.push(`/medecin/patients/${p.id}`)">
-              <div class="p-row__avatar">{{ p.nomComplet.charAt(0) }}</div>
+              <PatientAvatar :name="p.nomComplet" :size="38" />
               <div class="p-row__info">
                 <p class="p-row__name">{{ p.nomComplet }}</p>
                 <p class="p-row__meta">Score risque : {{ p.risk?.score ?? '—' }}/100</p>
@@ -256,7 +257,7 @@ onUnmounted(() => {
           </div>
           <div v-for="p in filtered" :key="p.id" class="pt-row" @click="router.push(`/medecin/patients/${p.id}`)">
             <div class="pt-patient">
-              <div class="pt-avatar">{{ p.nomComplet.charAt(0) }}</div>
+              <PatientAvatar :name="p.nomComplet" :size="34" />
               <span class="pt-name">{{ p.nomComplet }}</span>
             </div>
             <span class="pt-age">{{ p.age ?? '—' }} ans</span>
@@ -329,8 +330,8 @@ onUnmounted(() => {
   font-size: 13px; font-weight: 700; transition: opacity 0.15s;
 }
 .hdr-btn:hover { opacity: 0.88; }
-.hdr-btn--primary { background: #2563EB; color: white; }
-.hdr-btn--danger  { background: #FEE2E2; color: #EF4444; }
+.hdr-btn--primary { background: linear-gradient(135deg, #1677C8, #16B8A6); color: white; box-shadow: 0 8px 18px rgba(22,119,200,0.28); }
+.hdr-btn--danger  { background: #FFF1F2; color: #E11D48; }
 
 .dash-section { margin-bottom: 36px; }
 
@@ -340,20 +341,22 @@ onUnmounted(() => {
 @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
 
 .kpi-card {
-  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px;
+  background: #FFFFFF; border: 1px solid #D7E5EE; border-radius: 16px; padding: 20px;
   display: flex; align-items: center; gap: 16px;
-  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+  box-shadow: 0 1px 4px rgba(18,59,109,0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(18,59,109,0.08); }
 .kpi-icon {
   width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
-.kpi-icon--blue  { background: linear-gradient(135deg, #2563EB, #1D4ED8); }
-.kpi-icon--amber { background: linear-gradient(135deg, #F59E0B, #D97706); }
-.kpi-icon--red   { background: linear-gradient(135deg, #EF4444, #DC2626); }
-.kpi-icon--teal  { background: linear-gradient(135deg, #10B981, #059669); }
-.kpi-value { font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.04em; margin: 0 0 2px; }
-.kpi-label { font-size: 12px; color: #64748B; font-weight: 600; margin: 0; }
+.kpi-icon--blue  { background: linear-gradient(135deg, #1677C8, #123B6D); }
+.kpi-icon--amber { background: linear-gradient(135deg, #D97706, #B45309); }
+.kpi-icon--red   { background: linear-gradient(135deg, #E11D48, #BE123C); }
+.kpi-icon--teal  { background: linear-gradient(135deg, #16B8A6, #0E9A8B); }
+.kpi-value { font-size: 28px; font-weight: 800; color: #18324A; letter-spacing: -0.04em; margin: 0 0 2px; }
+.kpi-label { font-size: 12px; color: #5B738A; font-weight: 600; margin: 0; }
 
 /* Dual grid */
 .dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -369,7 +372,7 @@ onUnmounted(() => {
   margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
 }
 .panel__title { font-size: 15px; font-weight: 700; color: #0F172A; }
-.panel__link  { font-size: 12px; color: #2563EB; font-weight: 600; text-decoration: none; }
+.panel__link  { font-size: 12px; color: #1677C8; font-weight: 600; text-decoration: none; }
 .panel__link:hover { text-decoration: underline; }
 .panel__empty {
   display: flex; flex-direction: column; align-items: center;
@@ -391,11 +394,6 @@ onUnmounted(() => {
   transition: background 0.15s;
 }
 .p-row:hover { background: #F8FAFC; }
-.p-row__avatar {
-  width: 38px; height: 38px; border-radius: 50%; background: #2563EB;
-  color: white; font-size: 14px; font-weight: 700; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-}
 .p-row__info { flex: 1; min-width: 0; }
 .p-row__name { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 2px; }
 .p-row__meta { font-size: 12px; color: #64748B; margin: 0; }
@@ -435,11 +433,6 @@ onUnmounted(() => {
 }
 .pt-row:hover { background: #EFF6FF; }
 .pt-patient { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.pt-avatar {
-  width: 34px; height: 34px; border-radius: 50%; background: #2563EB;
-  color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-}
 .pt-name { font-size: 14px; font-weight: 600; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pt-age  { font-size: 13px; color: #334155; }
 .pt-dash { font-size: 13px; color: #94A3B8; }

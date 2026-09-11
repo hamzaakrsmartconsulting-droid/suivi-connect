@@ -1,0 +1,9 @@
+{
+  "name": "suivi-medicale",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke:infra": "node --test scripts/smoke-infra.mjs",
+    "smoke:infra:local": "node scripts/run-smoke-local.mjs"
+  }
+}

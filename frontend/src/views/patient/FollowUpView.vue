@@ -394,7 +394,7 @@ onMounted(loadFollowUps)
 }
 .form-card__head-icon {
   width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
-  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  background: #1677C8;
   box-shadow: 0 4px 14px rgba(37,99,235,0.35);
   display: flex; align-items: center; justify-content: center;
 }
@@ -507,7 +507,7 @@ onMounted(loadFollowUps)
 }
 .submit-btn {
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 14px 28px; background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  padding: 14px 28px; background: #1677C8;
   color: white; border: none; border-radius: 12px;
   font-size: 15px; font-weight: 700; cursor: pointer;
   box-shadow: 0 4px 16px rgba(37,99,235,0.4); letter-spacing: -0.01em;

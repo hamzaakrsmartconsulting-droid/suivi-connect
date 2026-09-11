@@ -476,7 +476,7 @@ onMounted(load)
 
 .add-btn {
   display: flex; align-items: center; gap: 8px;
-  background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white;
+  background: #1677C8; color: white;
   border: none; border-radius: 12px; padding: 12px 22px;
   font-size: 14px; font-weight: 700; cursor: pointer;
   box-shadow: 0 4px 14px rgba(37,99,235,0.35); transition: opacity .15s;
@@ -601,7 +601,7 @@ onMounted(load)
 .day-empty__btn {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 11px 22px; border-radius: 12px; border: none;
-  background: linear-gradient(135deg,#2563EB,#1D4ED8); color: white;
+  background: #1677C8; color: white;
   font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
   box-shadow: 0 4px 12px rgba(37,99,235,.35);
 }
@@ -686,7 +686,7 @@ onMounted(load)
 }
 .modal__head-icon {
   width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-  background: linear-gradient(135deg,#2563EB,#1D4ED8);
+  background: #1677C8;
   display: flex; align-items: center; justify-content: center;
 }
 .modal__title { font-size: 17px; font-weight: 800; color: #0F172A; margin: 0 0 2px; }
@@ -728,8 +728,18 @@ onMounted(load)
 .modal-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 24px; border-radius: 11px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
 .modal-btn:hover:not(:disabled) { opacity: .88; }
 .modal-btn:disabled { opacity: .45; cursor: not-allowed; }
-.modal-btn--cancel { background: #F1F5F9; color: #64748B; }
-.modal-btn--submit { background: linear-gradient(135deg,#2563EB,#1D4ED8); color: white; box-shadow: 0 4px 12px rgba(37,99,235,.3); }
+.modal-btn--cancel {
+  background: transparent; color: #5B738A;
+  border: 1.5px solid #D7E5EE;
+  transition: background 0.13s, border-color 0.13s;
+}
+.modal-btn--cancel:hover { background: #F0F6FA; border-color: #B0C8D8; }
+.modal-btn--submit {
+  background: #1677C8; color: white; border: none;
+  box-shadow: 0 4px 12px rgba(22,119,200,.28);
+  transition: background 0.13s, transform 0.12s;
+}
+.modal-btn--submit:hover:not(:disabled) { background: #1260AC; transform: translateY(-1px); }
 
 .btn-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: white; animation: spin .6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

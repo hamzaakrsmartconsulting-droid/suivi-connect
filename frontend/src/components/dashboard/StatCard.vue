@@ -14,12 +14,12 @@ const props = defineProps<{
 type ColorKey = 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'accent'
 
 const palette: Record<ColorKey, { iconColor: string; bg: string; text: string; border: string }> = {
-  primary:   { iconColor: '#2563EB', bg: 'linear-gradient(135deg,#DBEAFE,#EFF6FF)', text: '#1D4ED8', border: '#BFDBFE' },
-  secondary: { iconColor: '#059669', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: '#047857', border: '#A7F3D0' },
-  error:     { iconColor: '#DC2626', bg: 'linear-gradient(135deg,#FEE2E2,#FEF2F2)', text: '#B91C1C', border: '#FECACA' },
-  warning:   { iconColor: '#D97706', bg: 'linear-gradient(135deg,#FEF3C7,#FFFBEB)', text: '#B45309', border: '#FDE68A' },
-  info:      { iconColor: '#0284C7', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: '#0369A1', border: '#BAE6FD' },
-  accent:    { iconColor: '#7C3AED', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: '#6D28D9', border: '#DDD6FE' },
+  primary:   { iconColor: '#1677C8', bg: 'linear-gradient(135deg,#D7EBFA,#E8F3FB)', text: '#0F5FA3', border: '#B9D9F2' },
+  secondary: { iconColor: '#16B8A6', bg: 'linear-gradient(135deg,#CFF3EE,#E6F8F6)', text: '#0E9A8B', border: '#A5E4DC' },
+  error:     { iconColor: '#E11D48', bg: 'linear-gradient(135deg,#FECDD3,#FFF1F2)', text: '#BE123C', border: '#FDA4AF' },
+  warning:   { iconColor: '#D97706', bg: 'linear-gradient(135deg,#FDE68A,#FFFBEB)', text: '#B45309', border: '#FCD34D' },
+  info:      { iconColor: '#1677C8', bg: 'linear-gradient(135deg,#D7EBFA,#E8F3FB)', text: '#0F5FA3', border: '#B9D9F2' },
+  accent:    { iconColor: '#16B8A6', bg: 'linear-gradient(135deg,#CFF3EE,#E6F8F6)', text: '#0E9A8B', border: '#A5E4DC' },
 }
 
 const c = computed<ColorKey>(() => (props.color as ColorKey) || 'primary')
@@ -57,17 +57,17 @@ const meta = computed(() => palette[c.value] || palette.primary)
 
 <style scoped>
 .kpi {
-  background: #FFFFFF;
+  background: var(--c-surface, #FFFFFF);
   border-radius: 16px;
-  border: 1px solid #F1F5F9;
-  border-bottom: 3px solid var(--c-border, #BFDBFE);
+  border: 1px solid var(--c-border-lt, #EAF2F7);
+  border-bottom: 3px solid var(--c-border, #B9D9F2);
   padding: 20px 22px 22px;
-  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.04);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(18,59,109,0.05));
   display: flex; flex-direction: column; gap: 14px; min-height: 150px;
   transition: box-shadow 0.2s ease, transform 0.2s ease; cursor: default;
 }
 .kpi:hover {
-  box-shadow: 0 4px 12px rgba(15,23,42,0.08), 0 12px 32px rgba(15,23,42,0.06);
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(18,59,109,0.08));
   transform: translateY(-2px);
 }
 .kpi__top { display: flex; align-items: flex-start; justify-content: space-between; }
@@ -77,8 +77,8 @@ const meta = computed(() => palette[c.value] || palette.primary)
 }
 .kpi__trend { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 .kpi__body { display: flex; flex-direction: column; gap: 4px; }
-.kpi__label { font-size: 12px; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
-.kpi__value { font-size: 34px; font-weight: 800; color: #0F172A; line-height: 1; letter-spacing: -0.04em; margin: 0; font-variant-numeric: tabular-nums; }
-.kpi__unit { font-size: 15px; font-weight: 500; color: #CBD5E1; margin-left: 3px; letter-spacing: 0; }
-.kpi__sub { font-size: 12px; color: #94A3B8; font-weight: 500; margin: 2px 0 0; }
+.kpi__label { font-size: 12px; font-weight: 600; color: var(--c-text-4, #8AA0B4); text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+.kpi__value { font-size: 34px; font-weight: 800; color: var(--c-text, #18324A); line-height: 1; letter-spacing: -0.04em; margin: 0; font-variant-numeric: tabular-nums; }
+.kpi__unit { font-size: 15px; font-weight: 500; color: var(--c-text-5, #B7C7D4); margin-left: 3px; letter-spacing: 0; }
+.kpi__sub { font-size: 12px; color: var(--c-text-4, #8AA0B4); font-weight: 500; margin: 2px 0 0; }
 </style>

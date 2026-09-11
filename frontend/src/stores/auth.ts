@@ -54,9 +54,8 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(payload: Record<string, unknown>) {
     loading.value = true
     try {
+      // Create account only — user must log in afterwards (no auto-session)
       const { data } = await api.post('/auth/register', payload)
-      persistUser(data.user)
-      setTokens(data.accessToken, data.refreshToken)
       return data
     } finally {
       loading.value = false

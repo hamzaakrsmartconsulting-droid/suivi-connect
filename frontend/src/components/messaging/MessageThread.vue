@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
+import PatientAvatar from '@/components/ui/PatientAvatar.vue'
 
 interface Message {
   id: string
@@ -76,7 +77,7 @@ watch(() => props.contactTyping, async () => {
   <div class="chat">
     <!-- Header -->
     <div class="chat__header">
-      <div class="chat__avatar">{{ contactName.charAt(0).toUpperCase() }}</div>
+      <PatientAvatar :name="contactName" :size="44" />
       <div class="chat__header-info">
         <p class="chat__name">{{ contactName }}</p>
         <p class="chat__status">
@@ -111,9 +112,7 @@ watch(() => props.contactTyping, async () => {
           class="bubble-row"
           :class="msg.expediteurId === currentUserId ? 'bubble-row--sent' : 'bubble-row--received'"
         >
-          <div v-if="msg.expediteurId !== currentUserId" class="bubble__avatar">
-            {{ contactName.charAt(0).toUpperCase() }}
-          </div>
+          <PatientAvatar v-if="msg.expediteurId !== currentUserId" :name="contactName" :size="30" />
           <div class="bubble-wrap">
             <div
               class="bubble"
@@ -129,7 +128,7 @@ watch(() => props.contactTyping, async () => {
       <!-- Typing indicator -->
       <Transition name="typing-fade">
         <div v-if="contactTyping" class="bubble-row bubble-row--received typing-row">
-          <div class="bubble__avatar">{{ contactName.charAt(0).toUpperCase() }}</div>
+          <PatientAvatar :name="contactName" :size="30" />
           <div class="bubble-wrap">
             <div class="bubble bubble--received bubble--typing">
               <span class="typing-dot" />
@@ -193,12 +192,6 @@ watch(() => props.contactTyping, async () => {
   padding: 18px 24px; border-bottom: 1px solid #F1F5F9;
   background: #FFFFFF; flex-shrink: 0;
 }
-.chat__avatar {
-  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #3B82F6, #7C3AED);
-  color: white; font-size: 16px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
 .chat__header-info { flex: 1; min-width: 0; }
 .chat__name   { font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 3px; letter-spacing: -0.02em; }
 .chat__status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748B; margin: 0; font-weight: 500; }
@@ -242,12 +235,11 @@ watch(() => props.contactTyping, async () => {
 }
 .bubble-row--received { align-self: flex-start; }
 
-.bubble__avatar {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #3B82F6, #7C3AED);
-  color: white; font-size: 12px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
+/* bubble avatar spacing — now handled by PatientAvatar component */
+.bubble-row--received :deep(.pa-initials),
+.bubble-row--received :deep(.pa-img) {
   margin-bottom: 18px;
+  flex-shrink: 0;
 }
 
 .bubble-wrap { display: flex; flex-direction: column; gap: 4px; }

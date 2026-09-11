@@ -6,6 +6,7 @@ import { ensureConnected } from '@/services/socket'
 import MessageThread from '@/components/messaging/MessageThread.vue'
 import CallModal from '@/components/messaging/CallModal.vue'
 import { useCall } from '@/composables/useCall'
+import PatientAvatar from '@/components/ui/PatientAvatar.vue'
 
 interface Patient {
   id: string; nomComplet: string
@@ -166,7 +167,7 @@ onUnmounted(() => {
             :class="{ 'contact-item--active': selectedPatient?.id === p.id, 'contact-item--unread': unreadFrom.has(p.user.id) }"
             @click="selectPatient(p)"
           >
-            <div class="contact-item__avatar">{{ p.nomComplet.charAt(0) }}</div>
+            <PatientAvatar :name="p.nomComplet" :size="40" />
             <div class="contact-item__info">
               <p class="contact-item__name">{{ p.nomComplet }}</p>
               <p class="contact-item__sub">Patient en suivi</p>
@@ -282,13 +283,10 @@ onUnmounted(() => {
 .contact-item--active { background: #EFF6FF; }
 .contact-item--unread { background: #FFF8F0; }
 .contact-item__badge { color: #F59E0B; font-size: 16px; flex-shrink: 0; line-height: 1; }
-.contact-item__avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #3B82F6, #7C3AED);
-  color: white; font-size: 14px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
+.contact-item--active :deep(.pa-initials),
+.contact-item--active :deep(.pa-img) {
+  box-shadow: 0 0 0 2px #BFDBFE, 0 2px 8px rgba(22,119,200,0.15);
 }
-.contact-item--active .contact-item__avatar { box-shadow: 0 0 0 2px #BFDBFE; }
 .contact-item__name { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 2px; }
 .contact-item__sub  { font-size: 11px; color: #94A3B8; margin: 0; font-weight: 500; }
 

@@ -76,17 +76,23 @@ export const useNotificationStore = defineStore('notifications', () => {
       })
     }
 
-    // Patient-specific: ordonnance received
+    // Patient-specific events
     if (!auth.isDoctor && !auth.isAdmin) {
+      // Ordonnance received
       socket.off('new_ordonnance')
       socket.on('new_ordonnance', (payload: { downloadUrl: string; doctorName: string }) => {
         fetchNotifications().catch(() => {})
-        // browser notification
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification(`Ordonnance de Dr. ${payload.doctorName}`, {
             body: 'Votre médecin vous a envoyé une ordonnance. Cliquez pour télécharger.',
           })
         }
+      })
+
+      // Appointment scheduled/updated by doctor → refresh bell in real-time
+      socket.off('new_appointment')
+      socket.on('new_appointment', () => {
+        fetchNotifications().catch(() => {})
       })
     }
   }

@@ -181,7 +181,7 @@ onMounted(load)
   padding: 11px 24px; border-radius: 12px; border: none;
   font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
 }
-.pf-btn--save { background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; }
+.pf-btn--save { background: #1677C8; color: white; }
 .pf-btn--save:disabled { opacity: 0.6; cursor: not-allowed; }
 .pf-btn--save:not(:disabled):hover { opacity: 0.88; }
 

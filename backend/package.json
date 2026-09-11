@@ -10,6 +10,7 @@
     "start": "node --import tsx/esm src/index.ts",
     "migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
+    "seed:prod": "tsx prisma/seed-prod.ts",
     "db:push": "prisma db push"
   },
   "prisma": {

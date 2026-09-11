@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Search, Eye, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight } from '@lucide/vue'
+import PatientAvatar from '@/components/ui/PatientAvatar.vue'
 
 interface Patient {
   id: string
@@ -91,10 +92,10 @@ const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
           <tr v-for="p in paged" :key="p.id" class="plt__row" @click="emit('select', p.id)">
             <td>
               <div class="plt__patient">
-                <div class="plt__avatar">{{ p.nomComplet?.charAt(0) ?? '?' }}</div>
+                <PatientAvatar :name="p.nomComplet" :avatar="(p as any).avatar" :size="42" />
                 <div>
                   <p class="plt__name">{{ p.nomComplet }}</p>
-                  <p class="plt__id">{{ p.id }}</p>
+                  <p class="plt__id">{{ p.id?.slice(0, 8) }}…</p>
                 </div>
               </div>
             </td>
@@ -203,29 +204,27 @@ const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
   white-space: nowrap;
 }
 .plt__row {
-  border-bottom: 1px solid #F8FAFC; cursor: pointer;
+  border-bottom: 1px solid #F1F5F9; cursor: pointer;
   transition: background 0.12s;
 }
-.plt__row:hover { background: #F8FAFF; }
+.plt__row:hover { background: #F4F8FD; }
+.plt__row:hover :deep(.pa-initials),
+.plt__row:hover :deep(.pa-img) {
+  box-shadow: 0 4px 12px rgba(18,59,109,0.14);
+  transform: translateY(-1px);
+}
 .plt__row:last-child { border-bottom: none; }
-.plt__table td { padding: 14px 16px; vertical-align: middle; }
+.plt__table td { padding: 15px 16px; vertical-align: middle; }
 
 /* Patient cell */
-.plt__patient { display: flex; align-items: center; gap: 12px; }
-.plt__avatar {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: linear-gradient(135deg, #3B82F6, #6366F1);
-  color: white; font-size: 15px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.plt__name { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 2px; }
-.plt__id   { font-size: 11px; color: #94A3B8; margin: 0; }
+.plt__patient { display: flex; align-items: center; gap: 13px; }
+.plt__name { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 3px; letter-spacing: -0.01em; }
+.plt__id   { font-size: 11px; color: #B0C0D0; margin: 0; font-family: monospace; }
 .plt__age  { font-size: 14px; font-weight: 600; color: #334155; }
 
 .plt__stage {
   display: inline-block; padding: 3px 10px; border-radius: 6px;
-  font-size: 12px; font-weight: 700; color: #2563EB; background: #EFF6FF;
+  font-size: 12px; font-weight: 700; color: #1677C8; background: #E8F3FB;
 }
 
 .plt__risk-pill {
@@ -240,13 +239,13 @@ const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
 /* Voir button */
 .plt__btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
-  color: #2563EB; border: 1px solid #BFDBFE; border-radius: 8px;
+  padding: 7px 14px; background: linear-gradient(135deg, #E8F3FB, #E6F8F6);
+  color: #1677C8; border: 1px solid #B9D9F2; border-radius: 8px;
   font-size: 13px; font-weight: 700; cursor: pointer;
   transition: background 0.15s, transform 0.1s;
   white-space: nowrap;
 }
-.plt__btn:hover { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); transform: translateY(-1px); }
+.plt__btn:hover { background: linear-gradient(135deg, #D7EBFA, #CFF3EE); transform: translateY(-1px); }
 
 /* Pagination */
 .plt__pagination {

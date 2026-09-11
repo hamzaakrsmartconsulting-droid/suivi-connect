@@ -5,6 +5,11 @@ import StatCard from '@/components/dashboard/StatCard.vue'
 import EvolutionChart from '@/components/charts/EvolutionChart.vue'
 import { formatChartDate } from '@/utils/date'
 import RiskScoreGauge from '@/components/risk/RiskScoreGauge.vue'
+import {
+  FileText, Scale, HeartPulse, Droplets, Activity,
+  Pill, Check, CheckCircle2, AlertCircle, Flame,
+  ClipboardList
+} from '@lucide/vue'
 
 interface DashboardData {
   summary: {
@@ -104,7 +109,11 @@ onMounted(loadDashboard)
 
   <div v-else-if="error" class="dash-error">
     <div class="dash-error__box">
-      <div class="dash-error__icon">⚠️</div>
+      <div class="dash-error__icon">
+        <span class="picto picto--danger picto--lg">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+      </div>
       <h3 class="dash-error__title">Impossible de charger le tableau de bord</h3>
       <p class="dash-error__msg">{{ error }}</p>
       <p class="dash-error__hint">Vérifiez que le serveur backend est démarré sur le port 3000, puis réessayez.</p>
@@ -124,7 +133,8 @@ onMounted(loadDashboard)
           <span class="stage-tag">{{ data.summary.stadeRecommande }}</span>
         </p>
       </div>
-      <v-btn color="primary" variant="flat" prepend-icon="mdi-file-pdf-box" :loading="exporting" @click="exportPdf">
+      <v-btn color="primary" variant="flat" :loading="exporting" @click="exportPdf">
+        <template #prepend><FileText :size="16" stroke-width="1.8" /></template>
         Exporter PDF
       </v-btn>
     </div>
@@ -133,17 +143,24 @@ onMounted(loadDashboard)
     <section class="dash-section">
       <p class="section-label">Indicateurs clés</p>
       <div class="dash-grid dash-grid--4">
-        <StatCard title="Poids actuel" :value="data.summary.poids ?? '—'" unit="kg" icon="mdi-scale-bathroom" color="primary" />
-        <StatCard title="Tension artérielle" :value="data.summary.tension ?? '—'" unit="mmHg" icon="mdi-heart-pulse" color="error" />
-        <StatCard title="LDL cholestérol" :value="data.summary.ldl ?? '—'" unit="g/L" icon="mdi-water" color="info" />
+        <StatCard title="Poids actuel" :value="data.summary.poids ?? '—'" unit="kg" color="primary">
+          <template #icon><Scale :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
+        </StatCard>
+        <StatCard title="Tension artérielle" :value="data.summary.tension ?? '—'" unit="mmHg" color="error">
+          <template #icon><HeartPulse :size="20" stroke-width="1.8" style="color:#E11D48" /></template>
+        </StatCard>
+        <StatCard title="LDL cholestérol" :value="data.summary.ldl ?? '—'" unit="g/L" color="info">
+          <template #icon><Droplets :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
+        </StatCard>
         <StatCard
           title="Activité hebdomadaire"
           :value="data.summary.activiteMinutes"
           unit="min"
-          icon="mdi-run-fast"
           color="secondary"
           :subtitle="data.summary.activiteMinutes >= 150 ? 'Objectif atteint ✓' : 'Objectif : 150 min'"
-        />
+        >
+          <template #icon><Activity :size="20" stroke-width="1.8" style="color:#16B8A6" /></template>
+        </StatCard>
       </div>
     </section>
 
@@ -159,7 +176,7 @@ onMounted(loadDashboard)
         <div class="info-card info-card--blue">
           <div class="info-card__header">
             <div class="info-card__icon-wrap">
-              <v-icon size="20" color="white">mdi-pill</v-icon>
+              <Pill :size="20" color="white" stroke-width="1.8" />
             </div>
             <span class="info-card__title">Adhésion médicamenteuse</span>
           </div>
@@ -174,7 +191,7 @@ onMounted(loadDashboard)
             class="mb-3"
           />
           <div class="adherence-status" :style="{ color: adherenceColor }">
-            <v-icon size="14" class="mr-1">{{ data.summary.adherence >= 90 ? 'mdi-check-circle' : 'mdi-alert-circle-outline' }}</v-icon>
+            <component :is="data.summary.adherence >= 90 ? CheckCircle2 : AlertCircle" :size="14" class="mr-1" stroke-width="1.8" />
             {{ data.summary.adherence >= 90 ? 'Excellente adhésion' : data.summary.adherence >= 70 ? 'Adhésion correcte' : 'Adhésion à améliorer' }}
           </div>
         </div>
@@ -183,7 +200,7 @@ onMounted(loadDashboard)
         <div class="info-card info-card--green">
           <div class="info-card__header">
             <div class="info-card__icon-wrap info-card__icon-wrap--green">
-              <v-icon size="20" color="white">mdi-run-fast</v-icon>
+              <Activity :size="20" color="white" stroke-width="1.8" />
             </div>
             <span class="info-card__title">Activité cette semaine</span>
           </div>
@@ -205,7 +222,7 @@ onMounted(loadDashboard)
               <span class="exercise-stat__label">/ {{ data.progressionExercice.objectifMinutes }} min</span>
             </div>
             <div class="exercise-stat">
-              <v-icon size="14" color="#10B981" class="mr-1">mdi-fire</v-icon>
+              <Flame :size="14" color="#10B981" stroke-width="1.8" class="mr-1" />
               <span class="exercise-stat__label">Streak {{ data.progressionExercice.streakJours }}j</span>
             </div>
           </div>
@@ -221,8 +238,8 @@ onMounted(loadDashboard)
         <!-- Medications today -->
         <div class="panel-card">
           <div class="panel-card__header">
-            <span class="panel-card__title">
-              <v-icon size="18" color="#2563EB" class="mr-2">mdi-pill</v-icon>
+            <span class="panel-card__title" style="display:flex;align-items:center;gap:6px">
+              <Pill :size="18" stroke-width="1.8" style="color:#1677C8;flex-shrink:0" />
               Médicaments du jour
             </span>
             <router-link to="/patient/medicaments" class="panel-card__link">Tout voir</router-link>
@@ -230,7 +247,7 @@ onMounted(loadDashboard)
           <div class="med-list">
             <div v-for="med in data.medicationsToday" :key="med.nom" class="med-item" :class="{ 'med-item--done': med.pris }">
               <div class="med-item__check" :class="{ 'med-item__check--done': med.pris }">
-                <v-icon size="14" :color="med.pris ? 'white' : '#CBD5E1'">mdi-check</v-icon>
+                <Check :size="12" :color="med.pris ? 'white' : '#CBD5E1'" stroke-width="2.5" />
               </div>
               <div class="med-item__info">
                 <p class="med-item__name">{{ med.nom }}</p>
@@ -344,8 +361,8 @@ onMounted(loadDashboard)
         <!-- Recommendations -->
         <div class="panel-card">
           <div class="panel-card__header">
-            <span class="panel-card__title">
-              <v-icon size="18" color="#2563EB" class="mr-2">mdi-clipboard-text-outline</v-icon>
+            <span class="panel-card__title" style="display:flex;align-items:center;gap:6px">
+              <ClipboardList :size="18" stroke-width="1.8" style="color:#1677C8;flex-shrink:0" />
               Dernières recommandations
             </span>
             <router-link to="/patient/rapports" class="panel-card__link">Tout voir</router-link>
@@ -365,8 +382,8 @@ onMounted(loadDashboard)
         <!-- Risk factors -->
         <div class="panel-card">
           <div class="panel-card__header">
-            <span class="panel-card__title">
-              <v-icon size="18" color="#F59E0B" class="mr-2">mdi-alert-circle-outline</v-icon>
+            <span class="panel-card__title" style="display:flex;align-items:center;gap:6px">
+              <AlertCircle :size="18" stroke-width="1.8" style="color:#D97706;flex-shrink:0" />
               Facteurs de risque
             </span>
           </div>
@@ -382,12 +399,12 @@ onMounted(loadDashboard)
           </div>
           <div v-if="data.risk.facteurs.length" class="risk-factors">
             <div v-for="(f, i) in data.risk.facteurs" :key="i" class="risk-factor-item">
-              <v-icon size="14" color="#D97706">mdi-alert-circle</v-icon>
+              <AlertCircle :size="14" color="#D97706" stroke-width="1.8" />
               <span>{{ f }}</span>
             </div>
           </div>
           <div v-else class="risk-empty">
-            <v-icon size="40" color="#10B981">mdi-check-circle-outline</v-icon>
+            <CheckCircle2 :size="40" color="#10B981" stroke-width="1.5" />
             <p>Aucun facteur de risque identifié</p>
           </div>
         </div>
@@ -403,7 +420,7 @@ onMounted(loadDashboard)
 
 .dash-error { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
 .dash-error__box { text-align: center; max-width: 440px; padding: 40px; background: #fff; border: 1px solid #FEE2E2; border-radius: 20px; box-shadow: 0 4px 24px rgba(239,68,68,0.08); }
-.dash-error__icon { font-size: 40px; margin-bottom: 16px; }
+.dash-error__icon { margin-bottom: 16px; display: flex; justify-content: center; }
 .dash-error__title { font-size: 18px; font-weight: 700; color: #0F172A; margin: 0 0 10px; }
 .dash-error__msg { font-size: 14px; color: #EF4444; font-weight: 500; margin: 0 0 8px; font-family: monospace; background: #FEF2F2; padding: 8px 14px; border-radius: 8px; }
 .dash-error__hint { font-size: 13px; color: #64748B; margin: 0 0 20px; }

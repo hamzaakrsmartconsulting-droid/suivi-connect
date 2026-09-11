@@ -6,6 +6,7 @@ import { ensureConnected } from '@/services/socket'
 import MessageThread from '@/components/messaging/MessageThread.vue'
 import CallModal from '@/components/messaging/CallModal.vue'
 import { useCall } from '@/composables/useCall'
+import PatientAvatar from '@/components/ui/PatientAvatar.vue'
 
 interface Message {
   id: string; expediteurId: string; contenu: string; createdAt: string; lu: boolean
@@ -117,7 +118,7 @@ onUnmounted(() => {
         <p class="page-header__sub">Contactez votre médecin en toute confidentialité</p>
       </div>
       <div v-if="doctorContact" class="doctor-badge">
-        <div class="doctor-badge__avatar">D</div>
+        <PatientAvatar :name="doctorContact.nomComplet" :size="40" />
         <div>
           <p class="doctor-badge__name">{{ doctorContact.nomComplet }}</p>
           <p class="doctor-badge__role">Votre cardiologue</p>
@@ -185,12 +186,6 @@ onUnmounted(() => {
 .doctor-badge {
   display: flex; align-items: center; gap: 12px;
   background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 14px; padding: 12px 18px;
-}
-.doctor-badge__avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: linear-gradient(135deg, #2563EB, #1D4ED8);
-  color: white; font-size: 15px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .doctor-badge__name { font-size: 14px; font-weight: 700; color: #1E40AF; margin: 0 0 2px; }
 .doctor-badge__role { font-size: 12px; color: #3B82F6; margin: 0; font-weight: 500; }

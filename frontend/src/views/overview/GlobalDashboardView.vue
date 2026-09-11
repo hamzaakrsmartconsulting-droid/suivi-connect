@@ -8,6 +8,11 @@ import {
 } from 'chart.js'
 import { formatChartDate } from '@/utils/date'
 import StatCard from '@/components/dashboard/StatCard.vue'
+import {
+  Users, UserCheck, Stethoscope, ClipboardList,
+  ShieldCheck, Heart, AlertTriangle, CalendarDays,
+  FileText, Target, CheckCircle2, AlignLeft
+} from '@lucide/vue'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -135,9 +140,11 @@ onMounted(async () => {
 
   <div v-else-if="error" class="dash-error">
     <div class="dash-error__box">
-      <div style="font-size:36px;margin-bottom:12px">⚠️</div>
-      <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin:0 0 8px">Données indisponibles</h3>
-      <p style="font-size:13px;color:#EF4444;margin:0 0 8px;font-family:monospace;background:#FEF2F2;padding:8px 12px;border-radius:8px">{{ error }}</p>
+      <div class="picto picto--danger picto--lg" style="margin:0 auto 12px">
+        <AlertTriangle :size="26" stroke-width="1.75" />
+      </div>
+      <h3 style="font-size:17px;font-weight:700;color:#18324A;margin:0 0 8px">Données indisponibles</h3>
+      <p style="font-size:13px;color:#E11D48;margin:0 0 8px;font-family:monospace;background:#FFF1F2;padding:8px 12px;border-radius:8px">{{ error }}</p>
     </div>
   </div>
 
@@ -162,54 +169,38 @@ onMounted(async () => {
       <div class="dash-grid dash-grid--4">
 
         <StatCard title="Total patients" :value="data.kpis.totalPatients" color="primary" subtitle="Inscrits sur la plateforme">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </template>
+          <template #icon><Users :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
         </StatCard>
 
         <StatCard title="Patients actifs" :value="data.kpis.patientsActifs" color="secondary" subtitle="Suivi actif (4 sem.)">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
-          </template>
+          <template #icon><UserCheck :size="20" stroke-width="1.8" style="color:#16B8A6" /></template>
         </StatCard>
 
         <StatCard title="Médecins" :value="data.kpis.totalMedecins" color="info" subtitle="Praticiens actifs">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </template>
+          <template #icon><Stethoscope :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
         </StatCard>
 
         <StatCard title="Suivis soumis" :value="data.kpis.consultationsTotal" color="accent" subtitle="Total hebdomadaires">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </template>
+          <template #icon><ClipboardList :size="20" stroke-width="1.8" style="color:#7C3AED" /></template>
         </StatCard>
 
       </div>
       <div class="dash-grid dash-grid--4 mt-grid">
 
         <StatCard title="Adhésion moy." :value="data.kpis.adherenceMoyenne" unit="%" color="secondary">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </template>
+          <template #icon><ShieldCheck :size="20" stroke-width="1.8" style="color:#16B8A6" /></template>
         </StatCard>
 
         <StatCard title="Score cardiaque" :value="data.kpis.scoreMoyenCardiaque" unit="/100" color="primary">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          </template>
+          <template #icon><Heart :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
         </StatCard>
 
         <StatCard title="Alertes générées" :value="data.kpis.alertesGenerees" color="warning">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          </template>
+          <template #icon><AlertTriangle :size="20" stroke-width="1.8" style="color:#D97706" /></template>
         </StatCard>
 
         <StatCard title="Rendez-vous" :value="data.kpis.totalAppointments" color="info" subtitle="Planifiés">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </template>
+          <template #icon><CalendarDays :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
         </StatCard>
 
       </div>
@@ -217,21 +208,15 @@ onMounted(async () => {
       <div class="dash-grid dash-grid--3 mt-grid">
 
         <StatCard title="Ordonnances" :value="data.kpis.totalPrescriptions" color="accent" subtitle="Prescriptions médicales">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/><line x1="15" y1="9" x2="15" y2="21"/></svg>
-          </template>
+          <template #icon><FileText :size="20" stroke-width="1.8" style="color:#7C3AED" /></template>
         </StatCard>
 
         <StatCard title="Objectifs actifs" :value="data.kpis.totalGoals" color="secondary" subtitle="Objectifs de santé">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          </template>
+          <template #icon><Target :size="20" stroke-width="1.8" style="color:#16B8A6" /></template>
         </StatCard>
 
         <StatCard title="Stades complétés" :value="data.kpis.programmesTermines" color="primary" subtitle="Stade III et IV">
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </template>
+          <template #icon><CheckCircle2 :size="20" stroke-width="1.8" style="color:#1677C8" /></template>
         </StatCard>
 
       </div>

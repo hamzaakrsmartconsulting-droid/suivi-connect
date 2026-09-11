@@ -17,17 +17,34 @@ const authLimiter = rateLimit({
   message: { error: 'Trop de tentatives, réessayez plus tard' },
 });
 
-const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
-  role: z.enum(['PATIENT', 'DOCTOR']),
-  nomComplet: z.string().min(2),
-  age: z.number().int().min(18).max(120).optional(),
-  taille: z.number().positive().optional(),
-  profession: z.string().optional(),
-  dateProcedure: z.string().optional(),
-  specialite: z.string().optional(),
-});
+const registerSchema = z
+  .object({
+    email: z.string().email('Email invalide'),
+    password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+    role: z.enum(['PATIENT', 'DOCTOR']),
+    nomComplet: z.string().min(2, 'Le nom complet est requis'),
+    age: z.number().int().min(18, 'L\'âge minimum est 18 ans').max(120).optional(),
+    taille: z.number().positive('Taille invalide').min(100).max(250).optional(),
+    profession: z.string().optional(),
+    dateProcedure: z.string().optional(),
+    specialite: z.string().min(2).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === 'PATIENT') {
+      if (data.age == null) {
+        ctx.addIssue({ code: 'custom', path: ['age'], message: 'L\'âge est requis' });
+      }
+      if (data.taille == null) {
+        ctx.addIssue({ code: 'custom', path: ['taille'], message: 'La taille est requise' });
+      }
+      if (!data.dateProcedure) {
+        ctx.addIssue({ code: 'custom', path: ['dateProcedure'], message: 'La date de procédure est requise' });
+      }
+    }
+    if (data.role === 'DOCTOR' && !data.specialite?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['specialite'], message: 'La spécialité est requise' });
+    }
+  });
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -37,47 +54,40 @@ const loginSchema = z.object({
 router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
+    const email = data.email.toLowerCase().trim();
 
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new AppError(409, 'Cet email est déjà utilisé');
 
     const passwordHash = await bcrypt.hash(data.password, 12);
 
     const user = await prisma.user.create({
       data: {
-        email: data.email,
+        email,
         passwordHash,
         role: data.role as Role,
         ...(data.role === 'PATIENT'
           ? {
               patientProfile: {
                 create: {
-                  nomComplet: data.nomComplet,
-                  age: data.age || 50,
-                  taille: data.taille || 170,
-                  profession: data.profession,
-                  dateProcedure: data.dateProcedure ? new Date(data.dateProcedure) : new Date(),
+                  nomComplet: data.nomComplet.trim(),
+                  age: data.age!,
+                  taille: data.taille!,
+                  profession: data.profession?.trim() || null,
+                  dateProcedure: new Date(data.dateProcedure!),
                 },
               },
             }
           : {
               doctorProfile: {
                 create: {
-                  nomComplet: data.nomComplet,
-                  specialite: data.specialite || 'Cardiologie',
+                  nomComplet: data.nomComplet.trim(),
+                  specialite: data.specialite!.trim(),
                 },
               },
             }),
       },
       include: { patientProfile: true, doctorProfile: true },
-    });
-
-    const payload = { userId: user.id, email: user.email, role: user.role };
-    const accessToken = signAccessToken(payload);
-    const refreshToken = signRefreshToken(payload);
-
-    await prisma.refreshToken.create({
-      data: { token: refreshToken, userId: user.id, expiresAt: getRefreshExpiry() },
     });
 
     // Auto-assign new patient to the doctor with the fewest patients
@@ -108,14 +118,13 @@ router.post('/register', authLimiter, async (req, res, next) => {
       }
     }
 
+    // No auto-login: client must authenticate via /login
     res.status(201).json({
-      accessToken,
-      refreshToken,
+      message: 'Compte créé avec succès. Veuillez vous connecter.',
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
-        profile: user.patientProfile || user.doctorProfile,
       },
     });
   } catch (err) {
@@ -125,7 +134,8 @@ router.post('/register', authLimiter, async (req, res, next) => {
 
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const { email: rawEmail, password } = loginSchema.parse(req.body);
+    const email = rawEmail.toLowerCase().trim();
 
     const user = await prisma.user.findUnique({
       where: { email },

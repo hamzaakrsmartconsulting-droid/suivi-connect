@@ -1,21 +1,55 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { Component } from 'vue'
-import { HeartCrack, Octagon, TriangleAlert, Info, CheckCheck, CheckCircle } from '@lucide/vue'
+import { HeartCrack, Octagon, TriangleAlert, Info, CheckCheck, CheckCircle, CalendarDays, Bell } from '@lucide/vue'
 import api from '@/services/api'
+import { useNotificationStore } from '@/stores/notifications'
 
 interface Alert { id: string; type: string; severite: string; message: string; lu: boolean; createdAt: string }
+interface Notif { id: string; titre: string; message: string; type: string; lu: boolean; createdAt: string }
+
+// Combined item for display
+interface Item {
+  id: string; kind: 'alert' | 'notif'
+  type: string; severite?: string; titre?: string; message: string; lu: boolean; createdAt: string
+}
 
 const alerts  = ref<Alert[]>([])
 const loading = ref(true)
+const notifStore = useNotificationStore()
 
-const unread = computed(() => alerts.value.filter(a => !a.lu).length)
+// Merge clinical alerts + appointment/system notifications into one list
+const items = computed<Item[]>(() => {
+  const alertItems: Item[] = alerts.value.map(a => ({
+    id: a.id, kind: 'alert', type: a.type, severite: a.severite,
+    message: a.message, lu: a.lu, createdAt: a.createdAt,
+  }))
 
-const meta: Record<string, { bg: string; color: string; label: string; icon: Component }> = {
+  const notifItems: Item[] = notifStore.items
+    .filter(n => ['appointment', 'patient', 'reminder'].includes(n.type))
+    .map(n => ({
+      id: n.id, kind: 'notif', type: n.type, titre: n.titre,
+      message: n.message, lu: n.lu, createdAt: n.createdAt,
+    }))
+
+  return [...alertItems, ...notifItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+})
+
+const unread = computed(() => items.value.filter(i => !i.lu).length)
+
+const severityMeta: Record<string, { bg: string; color: string; label: string; icon: Component }> = {
   HIGH:     { bg: '#FEE2E2', color: '#EF4444', label: 'Élevé',    icon: HeartCrack },
   CRITICAL: { bg: '#F3E8FF', color: '#7C3AED', label: 'Critique', icon: Octagon },
   MEDIUM:   { bg: '#FEF3C7', color: '#D97706', label: 'Moyen',    icon: TriangleAlert },
   LOW:      { bg: '#D1FAE5', color: '#10B981', label: 'Faible',   icon: Info },
+}
+
+const notifMeta: Record<string, { bg: string; color: string; icon: Component; label: string }> = {
+  appointment: { bg: '#DBEAFE', color: '#1677C8', icon: CalendarDays, label: 'Rendez-vous' },
+  reminder:    { bg: '#FEF3C7', color: '#D97706', icon: Bell,          label: 'Rappel' },
+  patient:     { bg: '#DCFCE7', color: '#16A34A', icon: Bell,          label: 'Info' },
 }
 
 const typeLabel: Record<string, string> = {
@@ -23,17 +57,40 @@ const typeLabel: Record<string, string> = {
   WEIGHT: 'Poids', MEDICATION: 'Médicaments', ACTIVITY: 'Activité physique', GENERAL: 'Général',
 }
 
-async function markRead(id: string) {
-  try { await api.patch(`/patient/alerts/${id}/read`) } catch { /* ignore */ }
-  const a = alerts.value.find(x => x.id === id)
-  if (a) a.lu = true
+function getMeta(item: Item) {
+  if (item.kind === 'notif') return notifMeta[item.type] ?? notifMeta.patient
+  return severityMeta[item.severite ?? 'LOW'] ?? severityMeta.LOW
 }
 
-function markAll() { alerts.value.forEach(a => { a.lu = true }) }
+function getLabel(item: Item) {
+  if (item.kind === 'notif') return (notifMeta[item.type] ?? notifMeta.patient).label
+  return typeLabel[item.type] || 'Général'
+}
+
+async function markRead(item: Item) {
+  if (item.lu) return
+  if (item.kind === 'alert') {
+    try { await api.patch(`/patient/alerts/${item.id}/read`) } catch { /* ignore */ }
+    const a = alerts.value.find(x => x.id === item.id)
+    if (a) a.lu = true
+  } else {
+    await notifStore.markAsRead(item.id)
+  }
+}
+
+async function markAll() {
+  alerts.value.forEach(a => { a.lu = true })
+  await notifStore.markAllAsRead()
+}
 
 onMounted(async () => {
-  try { const { data } = await api.get('/patient/alerts'); alerts.value = data }
-  finally { loading.value = false }
+  try {
+    const { data } = await api.get('/patient/alerts')
+    alerts.value = data
+    if (!notifStore.items.length) await notifStore.fetchNotifications()
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -59,7 +116,7 @@ onMounted(async () => {
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!alerts.length" class="empty-state">
+    <div v-else-if="!items.length" class="empty-state">
       <div class="empty-state__icon">
         <CheckCircle :size="36" :stroke-width="1.5" color="#34D399" />
       </div>
@@ -67,37 +124,35 @@ onMounted(async () => {
       <p class="empty-state__sub">Tout va bien ! Aucun indicateur médical nécessite votre attention.</p>
     </div>
 
-    <!-- Alerts list -->
+    <!-- Combined list -->
     <div v-else class="alerts-list">
       <div
-        v-for="a in alerts"
-        :key="a.id"
+        v-for="item in items"
+        :key="`${item.kind}-${item.id}`"
         class="alert-card"
-        :class="{ 'alert-card--unread': !a.lu }"
-        @click="markRead(a.id)"
+        :class="{
+          'alert-card--unread': !item.lu,
+          'alert-card--appointment': item.kind === 'notif' && item.type === 'appointment'
+        }"
+        @click="markRead(item)"
       >
-        <div class="alert-card__icon"
-          :style="{ background: (meta[a.severite]||meta.LOW).bg }">
-          <component
-            :is="(meta[a.severite]||meta.LOW).icon"
-            :size="20"
-            :stroke-width="1.75"
-            :color="(meta[a.severite]||meta.LOW).color"
-          />
+        <div class="alert-card__icon" :style="{ background: getMeta(item).bg }">
+          <component :is="getMeta(item).icon" :size="20" :stroke-width="1.75" :color="getMeta(item).color" />
         </div>
 
         <div class="alert-card__body">
           <div class="alert-card__row">
-            <span class="alert-card__type">{{ typeLabel[a.type] || 'Général' }}</span>
-            <span class="sev-badge"
-              :style="{ background: (meta[a.severite]||meta.LOW).bg, color: (meta[a.severite]||meta.LOW).color }">
-              {{ (meta[a.severite]||meta.LOW).label }}
+            <span class="alert-card__type">
+              {{ item.kind === 'notif' ? item.titre : getLabel(item) }}
             </span>
-            <span v-if="!a.lu" class="unread-dot" />
+            <span class="sev-badge" :style="{ background: getMeta(item).bg, color: getMeta(item).color }">
+              {{ getMeta(item).label }}
+            </span>
+            <span v-if="!item.lu" class="unread-dot" />
           </div>
-          <p class="alert-card__msg">{{ a.message }}</p>
+          <p class="alert-card__msg">{{ item.message }}</p>
           <p class="alert-card__date">
-            {{ new Date(a.createdAt).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long' }) }}
+            {{ new Date(item.createdAt).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit' }) }}
           </p>
         </div>
       </div>
@@ -146,7 +201,8 @@ onMounted(async () => {
   transition: box-shadow 0.2s, border-color 0.15s;
 }
 .alert-card:hover { box-shadow: 0 4px 16px rgba(15,23,42,0.10); border-color: #CBD5E1; }
-.alert-card--unread { border-left: 4px solid #2563EB; background: #FAFCFF; }
+.alert-card--unread { border-left: 4px solid #1677C8; background: #FAFCFF; }
+.alert-card--appointment.alert-card--unread { border-left-color: #1677C8; }
 
 .alert-card__icon {
   width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
