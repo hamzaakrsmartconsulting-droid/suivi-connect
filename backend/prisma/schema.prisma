@@ -43,9 +43,6 @@ model User {
   role              Role
   resetToken        String?
   resetTokenExpires DateTime?
-  // Account lockout (Sprint 1)
-  loginAttempts     Int       @default(0)
-  lockedUntil       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

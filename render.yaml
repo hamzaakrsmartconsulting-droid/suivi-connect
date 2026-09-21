@@ -5,7 +5,7 @@ services:
     region: frankfurt       # closest to France
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run build && npx prisma db push --accept-data-loss
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
 
