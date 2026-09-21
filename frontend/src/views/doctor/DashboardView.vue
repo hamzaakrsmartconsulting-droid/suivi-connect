@@ -13,6 +13,7 @@ interface Patient { id: string; nomComplet: string; age: number; stadeRecommande
 
 const router = useRouter()
 const loading      = ref(true)
+const loadError    = ref('')
 const stats        = ref<Stats>({ totalPatients: 0, activeAlerts: 0, highRiskCount: 0, rdvAujourdhui: 0 })
 const highRisk     = ref<HighRiskPatient[]>([])
 const recentAlerts = ref<RecentAlert[]>([])
@@ -79,6 +80,8 @@ onMounted(async () => {
     recentAlerts.value = dashRes.data.recentAlerts ?? []
     activities.value   = dashRes.data.recentActivities ?? []
     patients.value     = patientsRes.data.items ?? []
+  } catch (e: any) {
+    loadError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur inconnue'
   } finally {
     loading.value = false
   }
@@ -122,6 +125,11 @@ onUnmounted(() => {
 
   <div v-if="loading" class="dash-loading">
     <v-progress-circular indeterminate color="primary" size="52" width="4" />
+  </div>
+
+  <div v-else-if="loadError" class="dash-error">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <p>Impossible de charger le tableau de bord.</p>
   </div>
 
   <div v-else class="dashboard">
@@ -246,6 +254,7 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div style="overflow-x:auto">
         <div class="patients-table">
           <div class="pt-header">
             <span>Patient</span>
@@ -277,6 +286,7 @@ onUnmounted(() => {
           <div v-if="!filtered.length" class="pt-empty">
             Aucun patient trouvé
           </div>
+        </div>
         </div>
       </div>
     </section>
@@ -312,6 +322,7 @@ onUnmounted(() => {
 
 <style scoped>
 .dash-loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+.dash-error { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px; color: #EF4444; font-weight: 600; text-align: center; }
 .dashboard { width: 100%; }
 
 /* Header */
@@ -446,6 +457,7 @@ onUnmounted(() => {
 }
 .pt-btn:hover { background: #DBEAFE; }
 .pt-empty { padding: 24px; text-align: center; color: #94A3B8; font-size: 14px; }
+@media (max-width: 700px) { .pt-header, .pt-row { min-width: 600px; } }
 
 /* Activity feed */
 .activity-feed { display: flex; flex-direction: column; }

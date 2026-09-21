@@ -56,11 +56,29 @@ const typeMeta: Record<string, string> = {
 
 async function markRead(id: string) {
   const a = alerts.value.find(x => x.id === id)
-  if (a) a.lu = true
+  if (a && !a.lu) {
+    a.lu = true
+    try {
+      await api.patch(`/doctor/notifications/${id}/read`)
+    } catch {
+      // revert on failure
+      a.lu = false
+    }
+  }
 }
 
 async function markAllRead() {
-  alerts.value.forEach(a => a.lu = true)
+  const prev = alerts.value.map(a => ({ id: a.id, lu: a.lu }))
+  alerts.value.forEach(a => { a.lu = true })
+  try {
+    await api.patch('/doctor/notifications/read-all')
+  } catch {
+    // revert on failure
+    prev.forEach(p => {
+      const a = alerts.value.find(x => x.id === p.id)
+      if (a) a.lu = p.lu
+    })
+  }
 }
 
 onMounted(async () => {
@@ -243,6 +261,7 @@ onMounted(async () => {
 /* Summary row */
 .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
 @media (max-width: 960px) { .summary-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .summary-row { grid-template-columns: 1fr; } }
 
 .summary-card {
   background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px;

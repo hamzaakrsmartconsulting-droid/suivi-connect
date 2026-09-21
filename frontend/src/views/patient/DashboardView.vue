@@ -33,6 +33,12 @@ const data = ref<DashboardData | null>(null)
 const loading = ref(true)
 const error = ref('')
 const exporting = ref(false)
+const exportToast = ref<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+function showExportToast(type: 'success' | 'error', msg: string) {
+  exportToast.value = { type, msg }
+  setTimeout(() => { exportToast.value = null }, 4000)
+}
 
 // Extra clinical data
 const appointments = ref<any[]>([])
@@ -91,9 +97,11 @@ async function exportPdf() {
     const response = await api.get('/patient/reports/pdf', { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
-    link.href = url; link.download = 'rapport-suivi.pdf'
+    link.href = url; link.download = `rapport-suivi-${new Date().toISOString().split('T')[0]}.pdf`
     link.click()
     window.URL.revokeObjectURL(url)
+  } catch {
+    showExportToast('error', 'Impossible de générer le PDF. Veuillez réessayer.')
   } finally {
     exporting.value = false
   }
@@ -122,6 +130,13 @@ onMounted(loadDashboard)
   </div>
 
   <div v-else-if="data" class="dashboard">
+
+    <!-- Export toast -->
+    <Transition name="toast">
+      <div v-if="exportToast" class="dash-export-toast" :class="`dash-export-toast--${exportToast.type}`">
+        {{ exportToast.msg }}
+      </div>
+    </Transition>
 
     <!-- Header -->
     <div class="dash-header">
@@ -245,6 +260,7 @@ onMounted(loadDashboard)
             <router-link to="/patient/medicaments" class="panel-card__link">Tout voir</router-link>
           </div>
           <div class="med-list">
+            <p v-if="!data.medicationsToday.length" class="med-list__empty">Aucun médicament aujourd'hui</p>
             <div v-for="med in data.medicationsToday" :key="med.nom" class="med-item" :class="{ 'med-item--done': med.pris }">
               <div class="med-item__check" :class="{ 'med-item__check--done': med.pris }">
                 <Check :size="12" :color="med.pris ? 'white' : '#CBD5E1'" stroke-width="2.5" />
@@ -315,7 +331,7 @@ onMounted(loadDashboard)
         <EvolutionChart
           title="Évolution du poids"
           :labels="chartLabels"
-          :datasets="[{ label: 'Poids', data: data.charts.poids.map(d => d.value), borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.07)' }]"
+          :datasets="[{ label: 'Poids', data: data.charts.poids.map(d => d.value), borderColor: '#1677C8', backgroundColor: 'rgba(37,99,235,0.07)' }]"
           unit="kg"
           :height="240"
         />
@@ -324,7 +340,7 @@ onMounted(loadDashboard)
           :labels="chartLabels"
           :datasets="[
             { label: 'Systolique', data: data.charts.tension.map(d => d.sys), borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.07)' },
-            { label: 'Diastolique', data: data.charts.tension.map(d => d.dia), borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.07)' },
+            { label: 'Diastolique', data: data.charts.tension.map(d => d.dia), borderColor: '#1677C8', backgroundColor: 'rgba(37,99,235,0.07)' },
           ]"
           unit="mmHg"
           :height="240"
@@ -368,6 +384,7 @@ onMounted(loadDashboard)
             <router-link to="/patient/rapports" class="panel-card__link">Tout voir</router-link>
           </div>
           <div class="reco-list">
+            <p v-if="!data.recommandations.length" class="reco-list__empty">Aucune recommandation disponible</p>
             <div v-for="r in data.recommandations" :key="r.id" class="reco-item" :class="{ 'reco-item--urgent': r.urgence }">
               <div class="reco-item__dot" :class="{ 'reco-item__dot--urgent': r.urgence }" />
               <div class="reco-item__body">
@@ -424,7 +441,7 @@ onMounted(loadDashboard)
 .dash-error__title { font-size: 18px; font-weight: 700; color: #0F172A; margin: 0 0 10px; }
 .dash-error__msg { font-size: 14px; color: #EF4444; font-weight: 500; margin: 0 0 8px; font-family: monospace; background: #FEF2F2; padding: 8px 14px; border-radius: 8px; }
 .dash-error__hint { font-size: 13px; color: #64748B; margin: 0 0 20px; }
-.dash-error__btn { background: #2563EB; color: white; border: none; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.dash-error__btn { background: #1677C8; color: white; border: none; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
 .dash-error__btn:hover { background: #1D4ED8; }
 
 /* Header */
@@ -435,7 +452,7 @@ onMounted(loadDashboard)
 }
 .dash-header__title { font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.03em; margin-bottom: 6px; }
 .dash-header__sub { font-size: 13px; color: #64748B; }
-.stage-tag { font-weight: 700; color: #2563EB; background: #EFF6FF; padding: 2px 8px; border-radius: 6px; }
+.stage-tag { font-weight: 700; color: #1677C8; background: #EFF6FF; padding: 2px 8px; border-radius: 6px; }
 
 .dash-section { margin-bottom: 36px; }
 
@@ -444,12 +461,12 @@ onMounted(loadDashboard)
   background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0;
   padding: 24px; box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
-.info-card--blue { border-top: 3px solid #2563EB; }
+.info-card--blue { border-top: 3px solid #1677C8; }
 .info-card--green { border-top: 3px solid #10B981; }
 
 .info-card__header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .info-card__icon-wrap {
-  width: 44px; height: 44px; border-radius: 12px; background: #2563EB;
+  width: 44px; height: 44px; border-radius: 12px; background: #1677C8;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .info-card__icon-wrap--green { background: #10B981; }
@@ -474,7 +491,7 @@ onMounted(loadDashboard)
 }
 .panel-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .panel-card__title { font-size: 15px; font-weight: 700; color: #0F172A; display: flex; align-items: center; }
-.panel-card__link { font-size: 12px; color: #2563EB; font-weight: 600; text-decoration: none; }
+.panel-card__link { font-size: 12px; color: #1677C8; font-weight: 600; text-decoration: none; }
 .panel-card__link:hover { text-decoration: underline; }
 
 /* Medications */
@@ -499,21 +516,21 @@ onMounted(loadDashboard)
 .rdv-list { display: flex; flex-direction: column; gap: 12px; }
 .rdv-item { display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: 12px; border: 1px solid #F1F5F9; background: #FAFAFA; }
 .rdv-item__date { width: 44px; text-align: center; background: #EFF6FF; border-radius: 10px; padding: 8px 4px; flex-shrink: 0; }
-.rdv-item__day { display: block; font-size: 18px; font-weight: 800; color: #2563EB; line-height: 1; }
-.rdv-item__month { display: block; font-size: 10px; font-weight: 600; color: #2563EB; text-transform: uppercase; margin-top: 2px; }
+.rdv-item__day { display: block; font-size: 18px; font-weight: 800; color: #1677C8; line-height: 1; }
+.rdv-item__month { display: block; font-size: 10px; font-weight: 600; color: #1677C8; text-transform: uppercase; margin-top: 2px; }
 .rdv-item__info { flex: 1; }
 .rdv-item__title { font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 3px; }
 .rdv-item__doc { font-size: 12px; color: #64748B; margin: 0; }
 .rdv-type-badge { background: #F1F5F9; color: #64748B; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
 
-.panel-link { font-size: 12px; font-weight: 700; color: #2563EB; text-decoration: none; }
+.panel-link { font-size: 12px; font-weight: 700; color: #1677C8; text-decoration: none; }
 .panel-link:hover { text-decoration: underline; }
 .panel-card__empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 12px; color: #94A3B8; font-size: 13px; text-align: center; }
 
 /* Next appointment card */
 .next-rdv { display: flex; align-items: center; gap: 16px; padding: 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid #E2E8F0; margin-bottom: 16px; }
 .next-rdv__date { text-align: center; background: #EFF6FF; border-radius: 10px; padding: 10px 14px; border: 1px solid #BFDBFE; flex-shrink: 0; }
-.next-rdv__day  { font-size: 22px; font-weight: 900; color: #2563EB; margin: 0; line-height: 1; }
+.next-rdv__day  { font-size: 22px; font-weight: 900; color: #1677C8; margin: 0; line-height: 1; }
 .next-rdv__mon  { font-size: 10px; font-weight: 700; color: #93C5FD; text-transform: uppercase; margin: 3px 0 0; }
 .next-rdv__info { flex: 1; min-width: 0; }
 .next-rdv__time { font-size: 14px; font-weight: 800; color: #0F172A; margin: 0 0 3px; }
@@ -557,4 +574,31 @@ onMounted(loadDashboard)
 .risk-factors { display: flex; flex-direction: column; gap: 8px; }
 .risk-factor-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #475569; background: #FFFBEB; border-radius: 8px; padding: 8px 12px; font-weight: 500; }
 .risk-empty { display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 8px; color: #64748B; font-size: 13px; }
+
+/* Export toast */
+.dash-export-toast {
+  position: fixed; top: 24px; right: 24px; z-index: 9999;
+  padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(15,23,42,0.16);
+}
+.dash-export-toast--error { background: #0F172A; color: #F87171; }
+.dash-export-toast--success { background: #0F172A; color: #34D399; }
+.toast-enter-active, .toast-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(16px); }
+
+/* Empty states */
+.med-list__empty { font-size: 13px; color: #94A3B8; text-align: center; padding: 16px 0; margin: 0; }
+.reco-list__empty { font-size: 13px; color: #94A3B8; text-align: center; padding: 16px 0; margin: 0; }
+
+@media (max-width: 640px) {
+  .dash-header { flex-direction: column; align-items: stretch; }
+  .dash-header :deep(.v-btn) { width: 100%; }
+  .dash-header__title { font-size: 20px; }
+  .info-card__value { font-size: 32px; }
+  .next-rdv { flex-wrap: wrap; }
+  .next-rdv__info { min-width: 0; flex: 1 1 100%; }
+  .rdv-status { align-self: flex-start; }
+  .panel-card { padding: 16px; }
+  .info-card { padding: 16px; }
+}
 </style>

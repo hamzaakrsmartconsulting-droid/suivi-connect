@@ -19,12 +19,16 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-// Auto-refresh token on 401
+// Auto-refresh token on 401 — but NEVER for auth endpoints themselves
+const AUTH_ROUTES = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    const isAuthRoute = AUTH_ROUTES.some(r => original?.url?.includes(r))
+
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
       original._retry = true
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {

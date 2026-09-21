@@ -180,6 +180,9 @@ router.post('/follow-ups', async (req: AuthRequest, res, next) => {
       medicamentsTotal: z.number().int().min(0),
       activiteMinutes: z.number().int().min(0),
       notes: z.string().optional(),
+    }).refine(d => d.tensionSys > d.tensionDia, {
+      message: 'La tension systolique doit être supérieure à la tension diastolique',
+      path: ['tensionDia'],
     });
 
     const data = schema.parse(req.body);
@@ -559,8 +562,15 @@ router.get('/reports/pdf', async (req: AuthRequest, res, next) => {
   try {
     const profile = await getPatientProfile(req.user!.userId);
     const pdf = await generatePatientReport(profile.id);
+    const date = new Date().toISOString().split('T')[0];
+    const nameSafe = profile.nomComplet
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const filename = `rapport-${nameSafe}-${date}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=rapport-suivi.pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(pdf);
   } catch (err) {
     next(err);
@@ -712,6 +722,86 @@ router.get('/ordonnances', async (req: AuthRequest, res, next) => {
 
     res.json(result);
   } catch (err) { next(err); }
+});
+
+// ── RGPD: Delete account ──────────────────────────────────────────────────────
+router.delete('/account', async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.user!.userId;
+    const { password } = z.object({ password: z.string() }).parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError(404, 'Utilisateur introuvable');
+
+    const passwordOk = await import('bcryptjs').then(m => m.compare(password, user.passwordHash));
+    if (!passwordOk) throw new AppError(401, 'Mot de passe incorrect');
+
+    // Hard delete — cascades to all related data (Prisma onDelete: Cascade)
+    await prisma.user.delete({ where: { id: userId } });
+
+    res.json({ message: 'Votre compte et toutes vos données ont été supprimés définitivement.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── RGPD: Export all personal data ───────────────────────────────────────────
+router.get('/export', async (req: AuthRequest, res, next) => {
+  try {
+    const profile = await getPatientProfile(req.user!.userId);
+    const userId = req.user!.userId;
+
+    const [user, followUps, medications, alerts, messages, appointments, goals, riskPredictions, ordonnances] =
+      await Promise.all([
+        prisma.user.findUnique({ where: { id: userId }, select: { email: true, role: true, createdAt: true } }),
+        prisma.weeklyFollowUp.findMany({ where: { patientId: profile.id }, orderBy: { semaine: 'asc' } }),
+        prisma.medication.findMany({ where: { patientId: profile.id } }),
+        prisma.alert.findMany({ where: { patientId: profile.id }, orderBy: { createdAt: 'asc' } }),
+        prisma.message.findMany({
+          where: { OR: [{ expediteurId: userId }, { destinataireId: userId }] },
+          orderBy: { createdAt: 'asc' },
+        }),
+        prisma.appointment.findMany({ where: { patientId: profile.id }, orderBy: { dateTime: 'asc' } }),
+        prisma.healthGoal.findMany({ where: { patientId: profile.id } }),
+        prisma.riskPrediction.findMany({ where: { patientId: profile.id }, orderBy: { createdAt: 'asc' } }),
+        prisma.ordonnance.findMany({ where: { patientId: profile.id }, orderBy: { createdAt: 'asc' } }),
+      ]);
+
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      notice: 'Export de vos données personnelles conformément au RGPD (Règlement Général sur la Protection des Données).',
+      compte: user,
+      profil: {
+        nomComplet: profile.nomComplet,
+        age: profile.age,
+        taille: profile.taille,
+        profession: profile.profession,
+        dateProcedure: profile.dateProcedure,
+        stadeRecommande: profile.stadeRecommande,
+        createdAt: profile.createdAt,
+      },
+      suivisHebdomadaires: followUps,
+      medicaments: medications,
+      alertes: alerts,
+      messages,
+      rendezVous: appointments,
+      objectifsDeSante: goals,
+      predictionsDeRisque: riskPredictions,
+      ordonnances: ordonnances.map(o => ({ id: o.id, createdAt: o.createdAt, medications: o.medications })),
+    };
+
+    const date = new Date().toISOString().split('T')[0];
+    const nameSafe = profile.nomComplet
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="mes-donnees-${nameSafe}-${date}.json"`);
+    res.json(exportData);
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

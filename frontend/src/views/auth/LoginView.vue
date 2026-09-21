@@ -12,6 +12,7 @@ const auth = useAuthStore()
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const locked = ref('')   // 423 account-locked message
 const success = ref('')
 const showPassword = ref(false)
 
@@ -23,6 +24,10 @@ onMounted(() => {
     }
     router.replace({ path: '/connexion', query: {} })
   }
+  if (route.query.reason === 'idle') {
+    error.value = 'Votre session a expiré après 30 minutes d\'inactivité. Veuillez vous reconnecter.'
+    router.replace({ path: '/connexion', query: {} })
+  }
 })
 
 function homeFor(role: string) {
@@ -32,14 +37,19 @@ function homeFor(role: string) {
 }
 
 async function handleLogin() {
-  error.value = ''
+  error.value  = ''
+  locked.value = ''
   success.value = ''
   try {
     const data = await auth.login(email.value, password.value)
     router.push(homeFor(data.user.role))
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { error?: string } } }
-    error.value = err.response?.data?.error || 'Email ou mot de passe incorrect'
+    const err = e as { response?: { status?: number; data?: { error?: string } } }
+    if (err.response?.status === 423) {
+      locked.value = err.response?.data?.error || 'Compte temporairement bloqué.'
+    } else {
+      error.value = err.response?.data?.error || 'Email ou mot de passe incorrect'
+    }
   }
 }
 
@@ -71,7 +81,8 @@ async function forgotPassword() {
         <h1 class="login-card__title">Connexion</h1>
         <p class="login-card__sub">Accédez à votre espace SuiviConnect.</p>
 
-        <div v-if="error" class="login-alert login-alert--error" role="alert">{{ error }}</div>
+        <div v-if="locked" class="login-alert login-alert--locked" role="alert">🔒 {{ locked }}</div>
+        <div v-else-if="error" class="login-alert login-alert--error" role="alert">{{ error }}</div>
         <div v-if="success" class="login-alert login-alert--ok" role="status">{{ success }}</div>
 
         <form class="login-form" @submit.prevent="handleLogin">
@@ -202,7 +213,8 @@ async function forgotPassword() {
   margin-bottom: 18px;
   line-height: 1.4;
 }
-.login-alert--error { background: #FFF1F2; color: #BE123C; border: 1px solid #FDA4AF; }
+.login-alert--error  { background: #FFF1F2; color: #BE123C; border: 1px solid #FDA4AF; }
+.login-alert--locked { background: #FFFBEB; color: #B45309; border: 1px solid #FCD34D; }
 .login-alert--ok { background: #E6F8F6; color: #0E9A8B; border: 1px solid #A5E4DC; }
 
 .login-form {

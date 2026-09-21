@@ -52,9 +52,11 @@ async function saveNote(followUpId: string) {
 const showPrescModal = ref(false)
 const prescForm = ref({ nom: '', dosage: '', frequence: '', dateDebut: new Date().toISOString().split('T')[0], dateFin: '', instructions: '' })
 const prescSaving = ref(false)
+const prescError = ref('')
 
 async function submitPrescription() {
   prescSaving.value = true
+  prescError.value = ''
   try {
     const { data } = await api.post(`/doctor/patients/${route.params.id}/prescriptions`, {
       ...prescForm.value,
@@ -68,6 +70,8 @@ async function submitPrescription() {
     showOrdonnance.value = true
 
     prescForm.value = { nom: '', dosage: '', frequence: '', dateDebut: new Date().toISOString().split('T')[0], dateFin: '', instructions: '' }
+  } catch (e: any) {
+    prescError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur lors de la prescription.'
   } finally {
     prescSaving.value = false
   }
@@ -77,6 +81,7 @@ async function submitPrescription() {
 const showGoalModal = ref(false)
 const goalForm = ref({ type: 'tension_sys', label: '', target: '', unit: '' })
 const goalSaving = ref(false)
+const goalError = ref('')
 
 const goalTypeOptions = [
   { value: 'tension_sys', label: 'Tension systolique', unit: 'mmHg', placeholder: 'Ex: 130' },
@@ -96,6 +101,7 @@ function onGoalTypeChange() {
 
 async function submitGoal() {
   goalSaving.value = true
+  goalError.value = ''
   try {
     const { data } = await api.post(`/doctor/patients/${route.params.id}/goals`, {
       ...goalForm.value,
@@ -104,6 +110,8 @@ async function submitGoal() {
     goals.value = goals.value.filter(g => g.type !== data.type)
     goals.value.push(data)
     showGoalModal.value = false
+  } catch (e: any) {
+    goalError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur lors de l\'enregistrement.'
   } finally {
     goalSaving.value = false
   }
@@ -549,7 +557,8 @@ onMounted(async () => {
               </div>
             </div>
             <div class="modal__footer">
-              <button class="modal-btn modal-btn--cancel" @click="showPrescModal = false">Annuler</button>
+              <p v-if="prescError" class="modal-error">{{ prescError }}</p>
+              <button class="modal-btn modal-btn--cancel" @click="showPrescModal = false; prescError = ''">Annuler</button>
               <button class="modal-btn modal-btn--submit" :disabled="!prescForm.nom || !prescForm.dosage || prescSaving" @click="submitPrescription">
                 {{ prescSaving ? 'Envoi…' : 'Prescrire' }}
               </button>
@@ -592,7 +601,8 @@ onMounted(async () => {
               </div>
             </div>
             <div class="modal__footer">
-              <button class="modal-btn modal-btn--cancel" @click="showGoalModal = false">Annuler</button>
+              <p v-if="goalError" class="modal-error">{{ goalError }}</p>
+              <button class="modal-btn modal-btn--cancel" @click="showGoalModal = false; goalError = ''">Annuler</button>
               <button class="modal-btn modal-btn--submit" :disabled="!goalForm.target || goalSaving" @click="submitGoal">
                 {{ goalSaving ? 'Enregistrement…' : 'Définir l\'objectif' }}
               </button>
@@ -690,7 +700,7 @@ onMounted(async () => {
 
 /* Follow-up table */
 .followup-table-wrap {
-  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden;
+  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow-x: auto;
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 .followup-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -867,9 +877,11 @@ onMounted(async () => {
 .modal__close  { background: #F1F5F9; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748B; }
 .modal__close:hover { background: #E2E8F0; }
 .modal__body   { padding: 20px 28px; }
-.modal__footer { display: flex; gap: 10px; justify-content: flex-end; padding: 0 28px 24px; }
+.modal__footer { display: flex; gap: 10px; justify-content: flex-end; align-items: center; padding: 0 28px 24px; }
+.modal-error { flex: 1; font-size: 12px; font-weight: 600; color: #EF4444; margin: 0; }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group--full { grid-column: 1 / -1; }
 .form-label { font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.04em; text-transform: uppercase; }

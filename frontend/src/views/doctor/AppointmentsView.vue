@@ -19,6 +19,8 @@ const patients     = ref<Patient[]>([])
 const showModal    = ref(false)
 const saving       = ref(false)
 const savedToast   = ref(false)
+const submitError  = ref('')
+const cancelError  = ref('')
 
 const form = ref({
   patientId: '', dateTime: '', type: 'consultation',
@@ -136,6 +138,7 @@ async function load() {
 
 async function submit() {
   saving.value = true
+  submitError.value = ''
   try {
     const { data } = await api.post('/doctor/appointments', form.value)
     appointments.value.push(data)
@@ -143,13 +146,22 @@ async function submit() {
     savedToast.value = true
     setTimeout(() => { savedToast.value = false }, 4000)
     form.value = { patientId: '', dateTime: '', type: 'consultation', motif: '', videoLink: '', notes: '' }
+  } catch (e: any) {
+    submitError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur lors de la planification.'
   } finally { saving.value = false }
 }
 
 async function cancelAppt(id: string) {
-  await api.patch(`/doctor/appointments/${id}`, { status: 'cancelled' })
-  const a = appointments.value.find(x => x.id === id)
-  if (a) a.status = 'cancelled'
+  if (!window.confirm('Annuler ce rendez-vous ?')) return
+  cancelError.value = ''
+  try {
+    await api.patch(`/doctor/appointments/${id}`, { status: 'cancelled' })
+    const a = appointments.value.find(x => x.id === id)
+    if (a) a.status = 'cancelled'
+  } catch (e: any) {
+    cancelError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur lors de l\'annulation.'
+    setTimeout(() => { cancelError.value = '' }, 5000)
+  }
 }
 
 onMounted(load)
@@ -163,6 +175,14 @@ onMounted(load)
       <div v-if="savedToast" class="saved-toast">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         Rendez-vous planifié — le patient a été notifié
+      </div>
+    </Transition>
+
+    <!-- ── Cancel error toast ─────────────────────────────────────────────── -->
+    <Transition name="toast">
+      <div v-if="cancelError" class="cancel-error-toast">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ cancelError }}
       </div>
     </Transition>
 
@@ -442,7 +462,8 @@ onMounted(load)
             </div>
 
             <div class="modal__footer">
-              <button class="modal-btn modal-btn--cancel" @click="showModal = false">Annuler</button>
+              <p v-if="submitError" class="modal-submit-error">{{ submitError }}</p>
+              <button class="modal-btn modal-btn--cancel" @click="showModal = false; submitError = ''">Annuler</button>
               <button class="modal-btn modal-btn--submit"
                 :disabled="!form.patientId || !form.dateTime || saving"
                 @click="submit">
@@ -494,6 +515,16 @@ onMounted(load)
 .toast-enter-active, .toast-leave-active { transition: all .35s; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(-14px); }
 
+.cancel-error-toast {
+  position: fixed; top: 80px; right: 24px; z-index: 9000;
+  display: flex; align-items: center; gap: 10px;
+  background: #DC2626; color: white;
+  padding: 14px 22px; border-radius: 14px; font-size: 14px; font-weight: 700;
+  box-shadow: 0 8px 32px rgba(220,38,38,.35);
+}
+
+.modal-submit-error { flex: 1; font-size: 12px; font-weight: 600; color: #EF4444; margin: 0; }
+
 /* ── Skeleton ────────────────────────────────────────────────────────────── */
 .skeleton-wrap { display: flex; gap: 24px; }
 .skeleton { border-radius: 20px; background: linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
@@ -503,6 +534,10 @@ onMounted(load)
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .agenda-layout { display: flex; gap: 24px; align-items: flex-start; }
+@media (max-width: 900px) {
+  .agenda-layout { flex-direction: column; }
+  .cal-col { width: 100%; }
+}
 
 /* ══ CAL COL ══════════════════════════════════════════════════════════════ */
 .cal-col {
@@ -722,7 +757,7 @@ onMounted(load)
 .type-opt--active { font-weight: 800; }
 
 .modal__footer {
-  display: flex; gap: 10px; justify-content: flex-end;
+  display: flex; gap: 10px; justify-content: flex-end; align-items: center;
   padding: 0 28px 24px;
 }
 .modal-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 24px; border-radius: 11px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; }

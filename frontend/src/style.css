@@ -187,6 +187,7 @@ html, body {
   .dash-grid--2 { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
+  .dash-grid--2,
   .dash-grid--3,
   .dash-grid--4 { grid-template-columns: 1fr; }
 }

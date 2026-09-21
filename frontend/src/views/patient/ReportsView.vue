@@ -11,6 +11,7 @@ interface Reports {
 const data = ref<Reports | null>(null)
 const loading = ref(true)
 const downloading = ref<string | null>(null)
+const loadError = ref('')
 
 async function download(id: string) {
   downloading.value = id
@@ -18,7 +19,7 @@ async function download(id: string) {
     const response = await api.get('/patient/reports/pdf', { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
-    link.href = url; link.download = 'rapport-suivi.pdf'
+    link.href = url; link.download = `rapport-suivi-${new Date().toISOString().split('T')[0]}.pdf`
     link.click()
     window.URL.revokeObjectURL(url)
   } finally {
@@ -30,6 +31,8 @@ onMounted(async () => {
   try {
     const { data: res } = await api.get('/patient/reports')
     data.value = res as Reports
+  } catch {
+    loadError.value = 'Impossible de charger les rapports.'
   } finally {
     loading.value = false
   }
@@ -39,6 +42,10 @@ onMounted(async () => {
 <template>
   <div v-if="loading" class="dash-loading">
     <v-progress-circular indeterminate color="primary" size="52" width="4" />
+  </div>
+
+  <div v-else-if="loadError" class="reports-error-banner">
+    {{ loadError }}
   </div>
 
   <div v-else-if="data" class="reports-page">
@@ -54,6 +61,7 @@ onMounted(async () => {
     <!-- Reports -->
     <section class="dash-section">
       <p class="section-label">Rapports disponibles</p>
+      <p v-if="!data.rapports.length" class="reports-empty">Aucun rapport disponible pour le moment.</p>
       <div class="reports-grid">
         <div v-for="r in data.rapports" :key="r.id" class="report-card">
           <div class="report-card__icon">
@@ -81,7 +89,7 @@ onMounted(async () => {
           <div class="reco-card__body">
             <div class="reco-card__header">
               <div class="reco-card__author">
-                <div class="reco-card__avatar">D</div>
+                <div class="reco-card__avatar">{{ r.auteur.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() }}</div>
                 <span class="reco-card__doc">{{ r.auteur }}</span>
               </div>
               <div class="reco-card__badges">
@@ -118,6 +126,15 @@ onMounted(async () => {
 <style scoped>
 .dash-loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
 .reports-page { width: 100%; }
+
+.reports-error-banner {
+  padding: 14px 20px; background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 12px; color: #EF4444; font-size: 14px; font-weight: 600;
+  margin: 24px 0;
+}
+.reports-empty {
+  font-size: 14px; color: #94A3B8; padding: 20px 0; margin: 0;
+}
 
 .dash-header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #E2E8F0; }
 .dash-header__title { font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.03em; margin-bottom: 6px; }
@@ -181,4 +198,15 @@ onMounted(async () => {
   font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.15s;
 }
 .history-btn:hover { background: #1D4ED8; }
+
+@media (max-width: 640px) {
+  .dash-header__title { font-size: 20px; }
+  .report-card { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .report-card__icon { width: 44px; height: 44px; }
+  .report-card__info { flex: 1 1 100%; }
+  .dl-btn { width: 100%; justify-content: center; }
+  .history-info { flex-direction: column; gap: 16px; padding: 20px; }
+  .history-info__icon { display: none; }
+  .history-btn { width: 100%; justify-content: center; }
+}
 </style>

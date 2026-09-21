@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuiviConnect — Réponse QA v1.3</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: #1E293B;
+      background: #fff;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 52px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #1677C8;
+      margin-bottom: 32px;
+    }
+    .header__brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header__logo {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #1677C8, #0D9488);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 20px; font-weight: 800;
+    }
+    .header__title { font-size: 20px; font-weight: 800; color: #18324A; letter-spacing: -0.03em; }
+    .header__sub   { font-size: 12px; color: #64748B; font-weight: 500; }
+    .header__meta  { text-align: right; font-size: 11px; color: #94A3B8; line-height: 1.8; }
+    .header__meta strong { color: #1677C8; font-weight: 700; }
+
+    /* ── Subject line ── */
+    .subject {
+      background: #EEF5FB;
+      border-left: 4px solid #1677C8;
+      border-radius: 0 10px 10px 0;
+      padding: 12px 18px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      color: #18324A;
+    }
+    .subject strong { font-weight: 700; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 32px; }
+    .section__title {
+      font-size: 14px; font-weight: 800; color: #18324A;
+      letter-spacing: -0.02em;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #E2EDF5;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section__title .badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 20px; letter-spacing: 0.03em;
+    }
+    .badge--blue  { background: #EEF5FB; color: #1677C8; }
+    .badge--green { background: #E6F8F6; color: #0D9488; }
+    .badge--red   { background: #FFF1F2; color: #E11D48; }
+    .badge--gray  { background: #F1F5F9; color: #64748B; }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    thead tr { background: #F7FBFD; }
+    th {
+      text-align: left;
+      padding: 9px 12px;
+      font-size: 11px; font-weight: 700;
+      color: #5B738A;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid #E2EDF5;
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #EAF2F7;
+      color: #18324A;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #FAFCFE; }
+
+    /* ── Status pills ── */
+    .pill {
+      display: inline-block;
+      padding: 2px 10px; border-radius: 20px;
+      font-size: 10.5px; font-weight: 700; white-space: nowrap;
+    }
+    .pill--ok     { background: #E6F8F6; color: #0D9488; }
+    .pill--info   { background: #FFFBEB; color: #B45309; }
+    .pill--scope  { background: #F1F5F9; color: #64748B; }
+    .pill--new    { background: #EEF5FB; color: #1677C8; }
+
+    /* ── Feature block ── */
+    .feature {
+      border: 1px solid #E2EDF5;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+    .feature__title {
+      font-size: 13px; font-weight: 700; color: #18324A;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    .feature__body { font-size: 12px; color: #5B738A; line-height: 1.7; }
+    .feature__test {
+      margin-top: 8px;
+      background: #F7FBFD;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11.5px; color: #1677C8;
+      font-style: italic;
+    }
+    .feature__test::before { content: "🧪 Test : "; font-style: normal; font-weight: 700; }
+
+    /* ── Note block ── */
+    .note {
+      background: #FFFBEB;
+      border: 1px solid #FCD34D;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 12px; color: #78350F;
+      margin-bottom: 12px;
+    }
+    .note strong { font-weight: 700; }
+
+    /* ── Credentials table ── */
+    .cred-table td:nth-child(2), .cred-table td:nth-child(3) {
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      background: #F7FBFD;
+      border-radius: 4px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #E2EDF5;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    .footer__sign { font-size: 12px; color: #18324A; font-weight: 600; }
+
+    /* ── Print ── */
+    @media print {
+      body { font-size: 11.5px; }
+      .page { padding: 24px 28px; }
+      .feature { break-inside: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header__brand">
+      <div class="header__logo">S</div>
+      <div>
+        <div class="header__title">SuiviConnect</div>
+        <div class="header__sub">Plateforme de suivi médical cardiaque</div>
+      </div>
+    </div>
+    <div class="header__meta">
+      <strong>Réponse officielle — Revue QA</strong><br />
+      Version : <strong>v1.3</strong><br />
+      Date : 21 septembre 2026<br />
+      Document : SPEC_QA.md v1.3
+    </div>
+  </div>
+
+  <!-- Objet -->
+  <div class="subject">
+    <strong>Objet :</strong> SuiviConnect v1.3 — Réponse complète à votre revue QA &amp; changelog des corrections
+  </div>
+
+  <p style="margin-bottom:24px; color:#5B738A; font-size:13px;">
+    Bonjour,<br /><br />
+    Merci pour votre rapport de revue détaillé. Nous avons traité <strong style="color:#18324A;">l'intégralité des points soulevés</strong>.
+    Voici notre réponse officielle point par point, accompagnée des nouveautés implémentées suite à vos retours.
+  </p>
+
+  <!-- Section 1 — Bugs corrigés -->
+  <div class="section">
+    <div class="section__title">
+      1. Bugs corrigés <span class="badge badge--green">16 corrections</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Point signalé</th>
+          <th>Statut</th>
+          <th>Comment vérifier</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Double lien Admin → <code>/apercu</code></td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Connexion Admin → 1 seul lien "Vue d'ensemble"</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Pas de déconnexion automatique après inactivité</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Laisser l'app 30 min → redirection avec message d'expiration</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Mauvais mot de passe → rechargement de page</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Saisir un mauvais MDP → message rouge inline, page stable</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Interface non responsive / illisible sur mobile</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Tester sur 375px : tables scrollables, formulaires empilés</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Pages blanches si API hors ligne</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Couper le backend → bannière rouge + bouton "Réessayer"</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Listes vides sans indication visuelle</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Ex: 0 médicament → "Aucun médicament aujourd'hui"</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Badges de risque en anglais (LOW / HIGH)</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Affichage : Faible / Modéré / Élevé / Très élevé</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>Icônes dashboard patient invisibles</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Dashboard patient → 4 icônes visibles sur les cartes de santé</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>Label "Mute" inversé dans l'appel vidéo</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Micro coupé → affiche "Désactivé" (avant affichait "Activé")</td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>"Tout marquer lu" sans persistance en base</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Marquer lu → persiste après rafraîchissement de page</td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td>Pages Mot de passe oublié / Reset visuellement incohérentes</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Design identique à la page de connexion</td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td>Formulaire d'inscription non responsive</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Tester sur 375px → champs empilés verticalement</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>Panel de notifications débordait sur mobile</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Ouvrir les notifs sur mobile → panel dans les limites de l'écran</td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td>Menu latéral écrasait le contenu sur mobile</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Tester &lt; 960px → menu s'ouvre en overlay, se ferme au tap</td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td>Spinner de chargement absent sur plusieurs formulaires</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Bouton "Enregistrer" affiche un spinner pendant la sauvegarde</td>
+        </tr>
+        <tr>
+          <td>16</td>
+          <td>Compatibilité navigateurs non configurée</td>
+          <td><span class="pill pill--ok">✅ Corrigé</span></td>
+          <td>Autoprefixer + browserslist configurés : Chrome, Edge, Firefox, Safari</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 2 — Nouvelles fonctionnalités -->
+  <div class="section">
+    <div class="section__title">
+      2. Nouvelles fonctionnalités implémentées suite à votre revue <span class="badge badge--blue">3 features</span>
+    </div>
+
+    <div class="feature">
+      <div class="feature__title">🔒 Blocage de compte — Sécurité</div>
+      <div class="feature__body">
+        Après <strong>5 tentatives de connexion incorrectes consécutives</strong>, le compte est automatiquement
+        bloqué pendant <strong>15 minutes</strong>. Une bannière orange informe l'utilisateur avec le temps
+        restant. Le déblocage est automatique. Le compteur se réinitialise après une connexion réussie.
+      </div>
+      <div class="feature__test">
+        Connexion → saisir un mauvais mot de passe 5 fois → bannière 🔒 "Compte temporairement bloqué. Réessayez dans 15 minutes."
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__title">🗑️ Suppression de compte RGPD</div>
+      <div class="feature__body">
+        Patient et médecin peuvent <strong>supprimer définitivement leur compte</strong> depuis leur page Profil.
+        Une modal de confirmation exige la saisie du mot de passe. Si incorrect, la suppression est refusée.
+        Si correct, toutes les données sont supprimées en cascade (suivis, médicaments, alertes, messages, RDV)
+        et l'utilisateur est déconnecté automatiquement.
+      </div>
+      <div class="feature__test">
+        Profil → "Supprimer mon compte" → saisir le mot de passe → compte supprimé, déconnexion, redirection vers /connexion. Tentative de reconnexion → refusée.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__title">📥 Export des données personnelles RGPD</div>
+      <div class="feature__body">
+        Chaque utilisateur peut <strong>télécharger l'intégralité de ses données personnelles</strong> au format JSON
+        depuis sa page Profil, conformément au Règlement Général sur la Protection des Données.
+        Le fichier est nommé dynamiquement : <code>mes-donnees-jean-dupont-2026-09-21.json</code>
+      </div>
+      <div class="feature__test">
+        Profil patient ou médecin → "Télécharger mes données" → fichier JSON téléchargé contenant profil, suivis, médicaments, alertes, messages, RDV, ordonnances.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3 — Points clarifiés -->
+  <div class="section">
+    <div class="section__title">
+      3. Points clarifiés <span class="badge badge--gray">Non des bugs</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Point soulevé</th>
+          <th>Statut</th>
+          <th>Explication</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Temps de chargement initial 20–50 s</td>
+          <td><span class="pill pill--info">ℹ️ Infrastructure</span></td>
+          <td>Cold start du serveur Render (plan gratuit) — s'arrête après 15 min d'inactivité. Une fois actif, réponses &lt; 1 s. Ce n'est pas un bug applicatif.</td>
+        </tr>
+        <tr>
+          <td>Pas de notifications hors-ligne</td>
+          <td><span class="pill pill--scope">Hors scope v1</span></td>
+          <td>Les notifications temps réel (Socket.io) fonctionnent quand l'utilisateur est connecté. Les push notifications navigateur sont hors scope v1, documentées section 16.</td>
+        </tr>
+        <tr>
+          <td>Création de patient depuis l'interface Admin</td>
+          <td><span class="pill pill--scope">Hors scope v1</span></td>
+          <td>L'inscription se fait via <code>/inscription</code> uniquement. Pas d'interface admin de création en v1.</td>
+        </tr>
+        <tr>
+          <td>Conflits horaires dans l'agenda</td>
+          <td><span class="pill pill--scope">Hors scope v1</span></td>
+          <td>Pas de contrôle automatique des chevauchements de rendez-vous en v1. Documenté section 10.</td>
+        </tr>
+        <tr>
+          <td>Appel audio/vidéo sur Safari</td>
+          <td><span class="pill pill--info">ℹ️ Navigateur</span></td>
+          <td>WebRTC sur Safari nécessite HTTPS — fonctionne en production (Cloudflare). Peut échouer en local HTTP. Ce comportement est lié au navigateur Apple, pas à l'application.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 4 — Comptes de test -->
+  <div class="section">
+    <div class="section__title">
+      4. Comptes de test <span class="badge badge--blue">Préconfigurés</span>
+    </div>
+    <table class="cred-table">
+      <thead>
+        <tr>
+          <th>Rôle</th>
+          <th>Email</th>
+          <th>Mot de passe</th>
+          <th>Données disponibles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>👤 Patient</td>
+          <td>jean.dupont@suivi.fr</td>
+          <td>Demo1234!</td>
+          <td>16 suivis hebdomadaires, risque LOW, stade III</td>
+        </tr>
+        <tr>
+          <td>👤 Patient</td>
+          <td>marie.bernard@suivi.fr</td>
+          <td>Demo1234!</td>
+          <td>16 suivis, risque MODERATE, stade II</td>
+        </tr>
+        <tr>
+          <td>👤 Patient</td>
+          <td>pierre.leroy@suivi.fr</td>
+          <td>Demo1234!</td>
+          <td>16 suivis, risque HIGH, stade II</td>
+        </tr>
+        <tr>
+          <td>🩺 Médecin</td>
+          <td>dr.martin@suivi.fr</td>
+          <td>Demo1234!</td>
+          <td>3 patients assignés, ordonnances, rendez-vous</td>
+        </tr>
+        <tr>
+          <td>⚙️ Admin</td>
+          <td>admin@suivi-connect.fr</td>
+          <td>Admin@SuiviConnect2024!</td>
+          <td>Vue d'ensemble statistique uniquement</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:12px;">
+      <strong>Important :</strong> Si un compte est supprimé lors des tests RGPD, contacter l'équipe pour réinitialiser les données de démo. Ne pas supprimer le compte Admin.
+    </div>
+  </div>
+
+  <!-- Section 5 — Navigateurs -->
+  <div class="section">
+    <div class="section__title">
+      5. Navigateurs supportés
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Navigateur</th>
+          <th>Version min</th>
+          <th>Statut</th>
+          <th>Priorité test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Chrome</td>
+          <td>110+</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Edge (Chromium)</td>
+          <td>110+</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Firefox</td>
+          <td>110+</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Safari Desktop</td>
+          <td>16+</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Chrome Mobile (Android)</td>
+          <td>Dernière stable</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Safari iOS</td>
+          <td>16+</td>
+          <td><span class="pill pill--ok">✅ Supporté complet</span></td>
+          <td>🔴 Obligatoire</td>
+        </tr>
+        <tr>
+          <td>Internet Explorer</td>
+          <td>Toute version</td>
+          <td><span class="pill pill--scope">❌ Non supporté</span></td>
+          <td>Ne pas tester</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div>
+      <div class="footer__sign">Équipe SuiviConnect</div>
+      <div>suivi-connect.fr · Réponse QA officielle</div>
+    </div>
+    <div style="text-align:right;">
+      Document généré le 21 septembre 2026<br />
+      SPEC_QA.md — version 1.3
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

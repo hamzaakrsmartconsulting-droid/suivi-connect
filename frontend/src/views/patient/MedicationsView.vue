@@ -19,12 +19,14 @@ interface Ordonnance {
 const medications = ref<Medication[]>([])
 const ordonnances = ref<Ordonnance[]>([])
 const loading     = ref(true)
+const loadError   = ref('')
 
 const activeMeds   = computed(() => medications.value.filter(m => m.actif))
 const inactiveMeds = computed(() => medications.value.filter(m => !m.actif))
 
 async function loadMedications() {
   loading.value = true
+  loadError.value = ''
   try {
     const [medsRes, ordoRes] = await Promise.all([
       api.get('/patient/medications'),
@@ -32,6 +34,8 @@ async function loadMedications() {
     ])
     medications.value = medsRes.data
     ordonnances.value = ordoRes.data
+  } catch {
+    loadError.value = 'Impossible de charger les médicaments. Veuillez réessayer.'
   } finally {
     loading.value = false
   }
@@ -55,6 +59,12 @@ onMounted(loadMedications)
     <!-- Loading -->
     <div v-if="loading" class="center-loader">
       <v-progress-circular indeterminate color="primary" size="40" width="3" />
+    </div>
+
+    <!-- Error state -->
+    <div v-else-if="loadError" class="error-banner">
+      <span>{{ loadError }}</span>
+      <button class="error-banner__retry" @click="loadMedications">Réessayer</button>
     </div>
 
     <!-- Empty state -->
@@ -187,6 +197,20 @@ onMounted(loadMedications)
 .toast-enter-active, .toast-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(16px); }
 
+/* Error banner */
+.error-banner {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding: 14px 20px; background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 12px; color: #EF4444; font-size: 14px; font-weight: 600;
+  margin-bottom: 16px;
+}
+.error-banner__retry {
+  background: #EF4444; color: white; border: none;
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.error-banner__retry:hover { background: #DC2626; }
+
 /* Loading / empty */
 .center-loader { display: flex; align-items: center; justify-content: center; padding: 64px; }
 .empty-state {
@@ -311,5 +335,15 @@ onMounted(loadMedications)
   background: #0B7A70;
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(13,148,136,0.36);
+}
+
+@media (max-width: 640px) {
+  .med-grid { grid-template-columns: 1fr; }
+  .ordo-card { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .ordo-card__info { min-width: 0; flex: 1 1 100%; }
+  .ordo-download-btn { width: 100%; justify-content: center; }
+  .ordo-section__header { flex-wrap: wrap; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-header__title { font-size: 20px; }
 }
 </style>

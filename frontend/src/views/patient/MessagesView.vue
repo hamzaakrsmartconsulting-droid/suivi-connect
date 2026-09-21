@@ -17,6 +17,8 @@ const messages        = ref<Message[]>([])
 const doctorContact   = ref<{ user: { id: string }; nomComplet: string } | null>(null)
 const loading         = ref(true)
 const doctorIsTyping  = ref(false)
+const loadError       = ref('')
+const sendError       = ref('')
 let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
 const {
@@ -30,6 +32,7 @@ const {
 
 async function loadDoctor() {
   loading.value = true
+  loadError.value = ''
   try {
     const { data } = await api.get('/patient/doctor-contact')
     doctorContact.value = data
@@ -37,6 +40,8 @@ async function loadDoctor() {
       const { data: msgs } = await api.get('/patient/messages', { params: { contactId: data.user.id } })
       messages.value = msgs
     }
+  } catch {
+    loadError.value = 'Impossible de charger la messagerie. Veuillez réessayer.'
   } finally {
     loading.value = false
   }
@@ -44,11 +49,17 @@ async function loadDoctor() {
 
 async function sendMessage(content: string) {
   if (!doctorContact.value?.user?.id) return
-  const { data } = await api.post('/patient/messages', {
-    destinataireId: doctorContact.value.user.id,
-    contenu: content,
-  })
-  messages.value.push(data)
+  sendError.value = ''
+  try {
+    const { data } = await api.post('/patient/messages', {
+      destinataireId: doctorContact.value.user.id,
+      contenu: content,
+    })
+    messages.value.push(data)
+  } catch {
+    sendError.value = 'Échec de l\'envoi. Réessayez.'
+    setTimeout(() => { sendError.value = '' }, 4000)
+  }
 }
 
 function onNewMessage(msg: Message) {
@@ -131,6 +142,11 @@ onUnmounted(() => {
       <v-progress-circular indeterminate color="primary" size="40" width="3" />
     </div>
 
+    <!-- Load error -->
+    <div v-else-if="loadError" class="msg-error-banner">
+      {{ loadError }}
+    </div>
+
     <!-- No doctor -->
     <div v-else-if="!doctorContact" class="empty-state">
       <div class="empty-state__icon">
@@ -142,6 +158,9 @@ onUnmounted(() => {
 
     <!-- Chat — full width -->
     <div v-else class="chat-wrapper">
+      <Transition name="send-err">
+        <div v-if="sendError" class="msg-send-error">{{ sendError }}</div>
+      </Transition>
       <MessageThread
         :messages="messages"
         :current-user-id="auth.user!.id"
@@ -192,6 +211,18 @@ onUnmounted(() => {
 
 .center-loader { display: flex; align-items: center; justify-content: center; padding: 80px; }
 
+.msg-error-banner {
+  padding: 14px 20px; background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 12px; color: #EF4444; font-size: 14px; font-weight: 600;
+}
+.msg-send-error {
+  padding: 10px 16px; background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 10px; color: #EF4444; font-size: 13px; font-weight: 600;
+  margin-bottom: 10px;
+}
+.send-err-enter-active, .send-err-leave-active { transition: opacity 0.25s; }
+.send-err-enter-from, .send-err-leave-to { opacity: 0; }
+
 .empty-state {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
   padding: 80px 32px; text-align: center;
@@ -205,4 +236,10 @@ onUnmounted(() => {
 
 /* Full-width chat */
 .chat-wrapper { width: 100%; }
+
+@media (max-width: 640px) {
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-header__title { font-size: 20px; }
+  .doctor-badge { width: 100%; box-sizing: border-box; }
+}
 </style>

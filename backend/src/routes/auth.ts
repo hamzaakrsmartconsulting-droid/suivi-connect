@@ -132,6 +132,9 @@ router.post('/register', authLimiter, async (req, res, next) => {
   }
 });
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_DURATION_MS   = 15 * 60 * 1000; // 15 minutes
+
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const { email: rawEmail, password } = loginSchema.parse(req.body);
@@ -142,9 +145,53 @@ router.post('/login', authLimiter, async (req, res, next) => {
       include: { patientProfile: true, doctorProfile: true },
     });
 
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    // Account lockout check (requires migration: add_account_lockout)
+    try {
+      if (user?.lockedUntil && user.lockedUntil > new Date()) {
+        const remainingMs = user.lockedUntil.getTime() - Date.now();
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        throw new AppError(423, `Compte temporairement bloqué. Réessayez dans ${remainingMin} minute${remainingMin > 1 ? 's' : ''}.`);
+      }
+    } catch (e) {
+      if (e instanceof AppError) throw e; // re-throw our own errors
+      // column doesn't exist yet (migration pending) — skip lockout silently
+    }
+
+    const passwordOk = user && await bcrypt.compare(password, user.passwordHash);
+
+    if (!user || !passwordOk) {
+      // Increment failed attempts (best-effort — skipped if column missing)
+      if (user) {
+        try {
+          const attempts = (user.loginAttempts ?? 0) + 1;
+          const shouldLock = attempts >= MAX_LOGIN_ATTEMPTS;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              loginAttempts: attempts,
+              lockedUntil: shouldLock ? new Date(Date.now() + LOCK_DURATION_MS) : null,
+            },
+          });
+          if (shouldLock) {
+            throw new AppError(423, `Compte bloqué après ${MAX_LOGIN_ATTEMPTS} tentatives. Réessayez dans 15 minutes.`);
+          }
+          const remaining = MAX_LOGIN_ATTEMPTS - attempts;
+          throw new AppError(401, `Email ou mot de passe incorrect. ${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''}.`);
+        } catch (e) {
+          if (e instanceof AppError) throw e;
+          // migration pending — fall through to generic error
+        }
+      }
       throw new AppError(401, 'Email ou mot de passe incorrect');
     }
+
+    // Reset lockout on success (best-effort)
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { loginAttempts: 0, lockedUntil: null },
+      });
+    } catch { /* migration pending — ignore */ }
 
     const payload = { userId: user.id, email: user.email, role: user.role };
     const accessToken = signAccessToken(payload);

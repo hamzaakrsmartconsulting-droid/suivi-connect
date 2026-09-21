@@ -41,12 +41,24 @@ const adherenceColor = computed(() =>
   adherencePercent.value >= 90 ? '#10B981' : adherencePercent.value >= 70 ? '#F59E0B' : '#EF4444'
 )
 
+const bpError = computed(() => {
+  const { tensionSys, tensionDia } = form.value
+  if (tensionSys > 0 && tensionDia > 0 && tensionSys <= tensionDia) {
+    return 'La tension systolique doit être supérieure à la tension diastolique'
+  }
+  return null
+})
+
 function showToast(type: 'success' | 'error', msg: string) {
   toast.value = { type, msg }
   setTimeout(() => { toast.value = null }, 3500)
 }
 
 async function handleSubmit() {
+  if (bpError.value) {
+    showToast('error', bpError.value)
+    return
+  }
   saving.value = true
   try {
     await api.post('/patient/follow-ups', { ...form.value })
@@ -59,11 +71,16 @@ async function handleSubmit() {
   }
 }
 
+const historyError = ref('')
+
 async function loadFollowUps() {
   loading.value = true
+  historyError.value = ''
   try {
     const { data } = await api.get('/patient/follow-ups')
     followUps.value = data.items
+  } catch {
+    historyError.value = 'Impossible de charger l\'historique. Veuillez réessayer.'
   } finally {
     loading.value = false
   }
@@ -150,10 +167,11 @@ onMounted(loadFollowUps)
             </div>
             <div class="field">
               <label class="field__label">Tension diastolique (mmHg)</label>
-              <div class="field__wrap field__wrap--icon">
+              <div class="field__wrap field__wrap--icon" :class="{ 'field__wrap--error': bpError }">
                 <span class="field__unit-left">DIA</span>
                 <input v-model.number="form.tensionDia" type="number" min="40" max="150" class="field__input field__input--has-left" />
               </div>
+              <p v-if="bpError" class="field__error">{{ bpError }}</p>
             </div>
           </div>
         </div>
@@ -308,13 +326,18 @@ onMounted(loadFollowUps)
         <v-progress-circular indeterminate color="primary" size="36" width="3" />
       </div>
 
+      <div v-else-if="historyError" class="history-card__error">
+        {{ historyError }}
+      </div>
+
       <div v-else-if="!followUps.length" class="history-card__empty">
         <ClipboardList :size="48" :stroke-width="1.25" color="#CBD5E1" />
         <p class="history-card__empty-title">Aucun suivi enregistré</p>
         <p class="history-card__empty-sub">Soumettez votre premier suivi ci-dessus pour commencer</p>
       </div>
 
-      <div v-else class="history-table">
+      <div v-else style="overflow-x: auto">
+        <div class="history-table">
         <div class="history-table__head">
           <span>Semaine</span>
           <span>Poids</span>
@@ -342,6 +365,7 @@ onMounted(loadFollowUps)
             <span class="status-dot" :class="fu.tabac ? 'status-dot--red' : 'status-dot--green'" />
             {{ fu.tabac ? 'Oui' : 'Non' }}
           </span>
+        </div>
         </div>
       </div>
     </div>
@@ -432,6 +456,13 @@ onMounted(loadFollowUps)
 .field__wrap:focus-within {
   border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.field__wrap--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+.field__error {
+  font-size: 12px; font-weight: 600; color: #EF4444; margin-top: 2px;
 }
 .field__input {
   flex: 1; border: none; outline: none; background: transparent;
@@ -567,4 +598,18 @@ onMounted(loadFollowUps)
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
 .status-dot--red   { background: #EF4444; }
 .status-dot--green { background: #10B981; }
+
+/* History error */
+.history-card__error {
+  padding: 16px 32px; color: #EF4444; font-size: 14px; font-weight: 600;
+  background: #FEF2F2; border-top: 1px solid #FEE2E2;
+}
+
+/* Mobile scrollable table */
+@media (max-width: 700px) {
+  .history-table__head,
+  .history-table__row {
+    grid-template-columns: repeat(7, minmax(90px, auto));
+  }
+}
 </style>

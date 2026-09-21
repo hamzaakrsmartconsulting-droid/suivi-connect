@@ -21,6 +21,7 @@ interface Analytics {
 
 const data = ref<Analytics | null>(null)
 const loading = ref(true)
+const loadError = ref('')
 
 const chartLabels = computed(() =>
   data.value?.alertesParSemaine.map(d => formatChartDate(d.date)) || []
@@ -100,6 +101,8 @@ onMounted(async () => {
   try {
     const { data: res } = await api.get('/doctor/analytics')
     data.value = res as Analytics
+  } catch (e: any) {
+    loadError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur inconnue'
   } finally {
     loading.value = false
   }
@@ -111,7 +114,12 @@ onMounted(async () => {
     <v-progress-circular indeterminate color="primary" size="52" width="4" />
   </div>
 
-  <div v-else-if="data" class="analytics-page">
+  <div v-else-if="loadError || !data" class="analytics-unavailable">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l18 18"/><path d="M20.4 20.4A10 10 0 0 1 3.6 3.6"/></svg>
+    <p>Données analytiques indisponibles.</p>
+  </div>
+
+  <div v-else class="analytics-page">
 
     <div class="dash-header">
       <div>
@@ -237,6 +245,7 @@ onMounted(async () => {
 
 <style scoped>
 .dash-loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+.analytics-unavailable { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 80px; color: #94A3B8; font-size: 15px; font-weight: 600; text-align: center; }
 .analytics-page { width: 100%; }
 
 .dash-header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #E2E8F0; }

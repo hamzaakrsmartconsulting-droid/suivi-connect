@@ -2,12 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 import {
   User, Ruler, Briefcase, CalendarDays, Clock, Activity,
-  Save, CheckCircle, AlertCircle, Loader2,
+  Save, CheckCircle, AlertCircle, Loader2, Download, Trash2,
 } from '@lucide/vue'
 
-const auth = useAuthStore()
+const auth   = useAuthStore()
+const router = useRouter()
 
 const profile = ref({
   nomComplet: '',
@@ -51,8 +53,52 @@ async function save() {
     setTimeout(() => { status.value = 'idle' }, 4000)
   } catch {
     status.value = 'error'
+    setTimeout(() => { status.value = 'idle' }, 4000)
   } finally {
     saving.value = false
+  }
+}
+
+// ── RGPD: export data ──────────────────────────────────────────────────────
+const exporting = ref(false)
+const exportError = ref('')
+async function exportData() {
+  exporting.value = true
+  try {
+    const res = await api.get('/patient/export', { responseType: 'blob' })
+    const cd  = res.headers['content-disposition'] || ''
+    const match = cd.match(/filename="([^"]+)"/)
+    const filename = match ? match[1] : 'mes-donnees.json'
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/json' }))
+    const a   = document.createElement('a')
+    a.href = url; a.download = filename; a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    exportError.value = 'Erreur lors de l\'export de vos données.'
+    setTimeout(() => { exportError.value = '' }, 4000)
+  } finally {
+    exporting.value = false
+  }
+}
+
+// ── RGPD: delete account ───────────────────────────────────────────────────
+const showDeleteModal = ref(false)
+const deletePassword  = ref('')
+const deleteError     = ref('')
+const deleting        = ref(false)
+
+async function confirmDelete() {
+  if (!deletePassword.value) { deleteError.value = 'Veuillez entrer votre mot de passe.'; return }
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await api.delete('/patient/account', { data: { password: deletePassword.value } })
+    auth.logout()
+    router.push('/login')
+  } catch (err: any) {
+    deleteError.value = err?.response?.data?.message || 'Mot de passe incorrect.'
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -93,6 +139,12 @@ onMounted(loadProfile)
         <div v-else-if="status === 'error'" class="profile-toast profile-toast--err">
           <AlertCircle :size="16" :stroke-width="2" />
           Erreur lors de la sauvegarde.
+        </div>
+      </Transition>
+      <Transition name="toast">
+        <div v-if="exportError" class="profile-toast profile-toast--err">
+          <AlertCircle :size="16" :stroke-width="2" />
+          {{ exportError }}
         </div>
       </Transition>
 
@@ -156,6 +208,63 @@ onMounted(loadProfile)
         </div>
 
       </form>
+
+      <!-- ── RGPD section ─────────────────────────────────────────────── -->
+      <section class="rgpd-section">
+        <div class="profile-section__head">
+          <span class="profile-section__icon profile-section__icon--warn">
+            <User :size="15" :stroke-width="2" />
+          </span>
+          <span class="profile-section__title">Mes données personnelles (RGPD)</span>
+        </div>
+        <p class="rgpd-desc">
+          Conformément au Règlement Général sur la Protection des Données, vous pouvez télécharger
+          l'ensemble de vos données ou supprimer définitivement votre compte.
+        </p>
+        <div class="rgpd-actions">
+          <button class="rgpd-btn rgpd-btn--export" :disabled="exporting" @click="exportData">
+            <Loader2 v-if="exporting" :size="15" :stroke-width="2" class="spin" />
+            <Download v-else :size="15" :stroke-width="2" />
+            {{ exporting ? 'Préparation…' : 'Télécharger mes données' }}
+          </button>
+          <button class="rgpd-btn rgpd-btn--delete" @click="showDeleteModal = true">
+            <Trash2 :size="15" :stroke-width="2" />
+            Supprimer mon compte
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Delete confirmation modal ──────────────────────────────── -->
+      <Teleport to="body">
+        <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+          <div class="modal-card">
+            <h2 class="modal-title">Supprimer mon compte</h2>
+            <p class="modal-body">
+              Cette action est <strong>irréversible</strong>. Toutes vos données (suivis, médicaments,
+              alertes, messages, rendez-vous…) seront définitivement supprimées.
+            </p>
+            <p class="modal-body">Pour confirmer, entrez votre mot de passe&nbsp;:</p>
+            <input
+              v-model="deletePassword"
+              type="password"
+              class="modal-input"
+              placeholder="Votre mot de passe"
+              @keyup.enter="confirmDelete"
+            />
+            <p v-if="deleteError" class="modal-error">{{ deleteError }}</p>
+            <div class="modal-actions">
+              <button class="modal-btn modal-btn--cancel" @click="showDeleteModal = false; deletePassword = ''; deleteError = ''">
+                Annuler
+              </button>
+              <button class="modal-btn modal-btn--confirm" :disabled="deleting" @click="confirmDelete">
+                <Loader2 v-if="deleting" :size="14" :stroke-width="2" class="spin" />
+                {{ deleting ? 'Suppression…' : 'Supprimer définitivement' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
     </template>
   </div>
 </template>
@@ -292,4 +401,79 @@ onMounted(loadProfile)
 
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RGPD section ── */
+.rgpd-section {
+  background: #fff;
+  border: 1px solid #FFE4E6;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(18,59,109,0.04);
+}
+.profile-section__icon--warn { background: #FFF1F2; color: #E11D48; }
+.rgpd-desc {
+  font-size: 13px; color: #5B738A; line-height: 1.6;
+  margin: 0 0 16px;
+}
+.rgpd-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.rgpd-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, transform 0.12s;
+}
+.rgpd-btn--export {
+  background: #EEF5FB; color: #1677C8;
+}
+.rgpd-btn--export:hover:not(:disabled) { background: #D8EAFA; transform: translateY(-1px); }
+.rgpd-btn--delete {
+  background: #FFF1F2; color: #E11D48;
+}
+.rgpd-btn--delete:hover { background: #FFE4E6; transform: translateY(-1px); }
+.rgpd-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(18,59,109,0.45);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  background: #fff; border-radius: 20px;
+  padding: 32px; max-width: 460px; width: 90%;
+  box-shadow: 0 24px 60px rgba(18,59,109,0.25);
+}
+.modal-title {
+  font-size: 18px; font-weight: 800; color: #18324A;
+  margin: 0 0 14px; letter-spacing: -0.02em;
+}
+.modal-body {
+  font-size: 14px; color: #5B738A; line-height: 1.6; margin: 0 0 10px;
+}
+.modal-input {
+  width: 100%; box-sizing: border-box;
+  padding: 11px 14px; border: 1.5px solid #D7E5EE; border-radius: 10px;
+  font-size: 14px; color: #18324A; background: #F7FBFD;
+  font-family: inherit; outline: none; margin-top: 4px;
+  transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: #1677C8; background: #fff; }
+.modal-error {
+  font-size: 13px; font-weight: 600; color: #E11D48; margin: 8px 0 0;
+}
+.modal-actions {
+  display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;
+}
+.modal-btn {
+  padding: 11px 22px; border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background 0.15s;
+}
+.modal-btn--cancel  { background: #F0F6FA; color: #5B738A; }
+.modal-btn--cancel:hover { background: #E2EDF5; }
+.modal-btn--confirm { background: #E11D48; color: #fff; }
+.modal-btn--confirm:hover:not(:disabled) { background: #BE123C; }
+.modal-btn--confirm:disabled { opacity: 0.7; cursor: not-allowed; }
 </style>

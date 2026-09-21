@@ -37,11 +37,18 @@ const filtered = computed(() => {
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / perPage)))
 const paged = computed(() => filtered.value.slice((page.value - 1) * perPage, page.value * perPage))
 
+const riskLabels: Record<string, string> = {
+  LOW:       'Faible',
+  MODERATE:  'Modéré',
+  HIGH:      'Élevé',
+  VERY_HIGH: 'Très élevé',
+}
+
 const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
-  LOW:       { label: 'LOW',       color: '#10B981', bg: '#D1FAE5' },
-  MODERATE:  { label: 'MODERATE',  color: '#F59E0B', bg: '#FEF3C7' },
-  HIGH:      { label: 'HIGH',      color: '#EF4444', bg: '#FEE2E2' },
-  VERY_HIGH: { label: 'VERY HIGH', color: '#7C3AED', bg: '#EDE9FE' },
+  LOW:       { label: riskLabels.LOW,       color: '#10B981', bg: '#D1FAE5' },
+  MODERATE:  { label: riskLabels.MODERATE,  color: '#F59E0B', bg: '#FEF3C7' },
+  HIGH:      { label: riskLabels.HIGH,      color: '#EF4444', bg: '#FEE2E2' },
+  VERY_HIGH: { label: riskLabels.VERY_HIGH, color: '#7C3AED', bg: '#EDE9FE' },
 }
 </script>
 
@@ -112,7 +119,7 @@ const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
                   color: (riskMeta[p.riskPredictions[0].niveau] ?? riskMeta.LOW).color
                 }"
               >
-                {{ (riskMeta[p.riskPredictions[0].niveau] ?? riskMeta.LOW).label }}
+                {{ riskLabels[p.riskPredictions[0].niveau] ?? p.riskPredictions[0].niveau }}
               </span>
               <span v-else class="plt__risk-none">—</span>
             </td>
@@ -140,11 +147,11 @@ const riskMeta: Record<string, { label: string; color: string; bg: string }> = {
         {{ (page - 1) * perPage + 1 }}–{{ Math.min(page * perPage, filtered.length) }} sur {{ filtered.length }}
       </span>
       <div class="plt__pagination-btns">
-        <button class="plt__pg-btn" :disabled="page === 1" @click="page--">
+        <button class="plt__pg-btn" :disabled="page === 1" aria-label="Page précédente" @click="page--">
           <ChevronLeft :size="15" :stroke-width="2" />
         </button>
         <span class="plt__pg-num">{{ page }} / {{ totalPages }}</span>
-        <button class="plt__pg-btn" :disabled="page === totalPages" @click="page++">
+        <button class="plt__pg-btn" :disabled="page === totalPages" aria-label="Page suivante" @click="page++">
           <ChevronRight :size="15" :stroke-width="2" />
         </button>
       </div>

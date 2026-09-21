@@ -346,6 +346,10 @@ async function handleRegister() {
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+@media (max-width: 600px) {
+  .field-row { grid-template-columns: 1fr; }
+}
+
 .field__label {
   font-size: 12.5px;
   font-weight: 700;

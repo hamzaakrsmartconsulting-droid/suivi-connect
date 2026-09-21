@@ -43,6 +43,9 @@ model User {
   role              Role
   resetToken        String?
   resetTokenExpires DateTime?
+  // Account lockout (Sprint 1)
+  loginAttempts     Int       @default(0)
+  lockedUntil       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -203,12 +206,12 @@ model RiskPrediction {
 }
 
 model Message {
-  id            String   @id @default(uuid())
-  expediteurId  String
+  id             String   @id @default(uuid())
+  expediteurId   String
   destinataireId String
-  contenu       String
-  lu            Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  contenu        String
+  lu             Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   expediteur   User @relation("SentMessages", fields: [expediteurId], references: [id], onDelete: Cascade)
   destinataire User @relation("ReceivedMessages", fields: [destinataireId], references: [id], onDelete: Cascade)
@@ -236,12 +239,12 @@ model Appointment {
   patientId String
   dateTime  DateTime
   type      String   @default("consultation")
-  motif     String?
-  status    String   @default("proposed")
-  videoLink String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  motif        String?
+  status       String   @default("proposed")
+  videoLink    String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   doctor  DoctorProfile  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)

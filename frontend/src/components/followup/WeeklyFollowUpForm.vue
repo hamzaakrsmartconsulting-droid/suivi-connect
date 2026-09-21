@@ -19,9 +19,20 @@ const form = ref({
 })
 
 const loading = ref(false)
+const bpError = ref('')
 
 function handleSubmit() {
-  emit('submit', { ...form.value })
+  bpError.value = ''
+  if (form.value.tensionSys <= form.value.tensionDia) {
+    bpError.value = 'La tension systolique doit être supérieure à la tension diastolique.'
+    return
+  }
+  loading.value = true
+  try {
+    emit('submit', { ...form.value })
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -44,6 +55,9 @@ function handleSubmit() {
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-text-field v-model.number="form.tensionDia" label="Tension diastolique" type="number" />
+        </v-col>
+        <v-col v-if="bpError" cols="12">
+          <v-alert type="error" density="compact" variant="tonal" class="mb-0">{{ bpError }}</v-alert>
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-text-field v-model.number="form.medicamentsPris" label="Médicaments pris" type="number" />

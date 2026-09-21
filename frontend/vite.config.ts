@@ -22,4 +22,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Target: Chrome 110+, Edge 110+, Firefox 110+, Safari 16+
+    target: ['chrome110', 'edge110', 'firefox110', 'safari16'],
+    cssTarget: ['chrome110', 'edge110', 'firefox110', 'safari16'],
+  },
+  css: {
+    postcss: {
+      plugins: [
+        // Autoprefixer adds -webkit-, -moz- prefixes automatically
+        // Ensures CSS works on Safari, Firefox, older mobile browsers
+        (await import('autoprefixer')).default(),
+      ],
+    },
+  },
 })

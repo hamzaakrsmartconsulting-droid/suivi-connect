@@ -21,6 +21,12 @@ const props = defineProps<{
   height?: number
 }>()
 
+const isEmpty = computed(() =>
+  !props.labels?.length ||
+  !props.datasets?.length ||
+  props.datasets.every(ds => !ds.data?.length)
+)
+
 const chartData = computed(() => ({
   labels: props.labels,
   datasets: props.datasets.map((ds, i) => ({
@@ -103,7 +109,8 @@ const chartOptions = computed(() => ({
       <slot name="action" />
     </div>
     <div class="echart__body" :style="{ height: `${height || 240}px` }">
-      <Line :data="chartData" :options="chartOptions" />
+      <div v-if="isEmpty" class="echart__empty">Pas de données disponibles</div>
+      <Line v-else :data="chartData" :options="chartOptions" />
     </div>
   </div>
 </template>
@@ -139,5 +146,15 @@ const chartOptions = computed(() => ({
   position: relative;
   flex: 1;
   min-height: 0;
+}
+
+.echart__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  color: #94A3B8;
+  font-weight: 500;
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
 import {
@@ -16,6 +17,7 @@ const router = useRouter()
 const auth   = useAuthStore()
 const notif  = useNotificationStore()
 
+const { mobile } = useDisplay()
 const drawerOpen = ref(true)
 const rail       = ref(false)
 const userMenu   = ref(false)
@@ -65,8 +67,7 @@ const overviewNav: NavItem[] = [
 ]
 
 const adminNav: NavItem[] = [
-  { icon: ShieldCheck, label: 'Administration', to: '/apercu', section: null },
-  { icon: Globe,       label: "Vue d'ensemble", to: '/apercu', section: null },
+  { icon: ShieldCheck, label: "Vue d'ensemble", to: '/apercu', section: null },
 ]
 
 const navItems = computed(() => {
@@ -107,7 +108,7 @@ async function logout() {
 }
 
 onMounted(async () => {
-  if (auth.isAuthenticated) {
+  if (auth.isAuthenticated && !auth.isAdmin) {
     await notif.fetchNotifications()
     notif.initSocketListeners()
   }
@@ -121,7 +122,8 @@ onMounted(async () => {
       v-model="drawerOpen"
       :rail="rail"
       app
-      permanent
+      :permanent="!mobile"
+      :temporary="mobile"
       class="sidebar"
       :width="272"
       :rail-width="72"
@@ -565,7 +567,7 @@ onMounted(async () => {
 /* Notification panel */
 .notif-panel {
   background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0;
-  box-shadow: 0 12px 40px rgba(15,23,42,0.14); overflow: hidden; width: 380px;
+  box-shadow: 0 12px 40px rgba(15,23,42,0.14); overflow: hidden; width: 380px; max-width: calc(100vw - 32px);
 }
 .notif-panel__head {
   display: flex; align-items: flex-start; justify-content: space-between;

@@ -22,6 +22,7 @@ const patients          = ref<Patient[]>([])
 const selectedPatient   = ref<Patient | null>(null)
 const messages          = ref<Message[]>([])
 const loading           = ref(true)
+const loadError         = ref('')
 const search            = ref('')
 const patientIsTyping   = ref(false)
 const unreadFrom        = ref<Set<string>>(new Set())
@@ -44,10 +45,13 @@ const filteredPatients = computed(() => {
 
 async function loadPatients() {
   loading.value = true
+  loadError.value = ''
   try {
     const { data } = await api.get('/doctor/patients')
     patients.value = data.items
     if (data.items.length > 0) await selectPatient(data.items[0])
+  } catch (e: any) {
+    loadError.value = e?.response?.data?.error ?? e?.message ?? 'Erreur lors du chargement.'
   } finally {
     loading.value = false
   }
@@ -159,6 +163,10 @@ onUnmounted(() => {
           <v-progress-circular indeterminate color="primary" size="28" width="3" />
         </div>
 
+        <div v-else-if="loadError" class="contacts-error">
+          <p>{{ loadError }}</p>
+        </div>
+
         <div v-else class="contacts-list">
           <button
             v-for="p in filteredPatients"
@@ -174,6 +182,7 @@ onUnmounted(() => {
             </div>
             <span v-if="unreadFrom.has(p.user.id)" class="contact-item__badge">●</span>
           </button>
+          <p v-if="!filteredPatients.length && !loading" class="contacts-empty">Aucun patient trouvé.</p>
         </div>
       </div>
 
@@ -268,6 +277,8 @@ onUnmounted(() => {
 .contacts-search__input::placeholder { color: #CBD5E1; }
 
 .contacts-loading { display: flex; align-items: center; justify-content: center; padding: 40px; }
+.contacts-error { padding: 20px; text-align: center; color: #EF4444; font-size: 13px; font-weight: 600; }
+.contacts-empty { padding: 16px; text-align: center; color: #94A3B8; font-size: 13px; }
 
 .contacts-list { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
 .contacts-list::-webkit-scrollbar { width: 3px; }

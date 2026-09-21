@@ -870,4 +870,70 @@ router.delete('/patients/:id/goals/:goalId', async (req: AuthRequest, res, next)
   }
 });
 
+// ── RGPD: Delete account ──────────────────────────────────────────────────────
+router.delete('/account', async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.user!.userId;
+    const { password } = z.object({ password: z.string() }).parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError(404, 'Utilisateur introuvable');
+
+    const bcrypt = await import('bcryptjs');
+    const passwordOk = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordOk) throw new AppError(401, 'Mot de passe incorrect');
+
+    await prisma.user.delete({ where: { id: userId } });
+    res.json({ message: 'Votre compte et toutes vos données ont été supprimés définitivement.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── RGPD: Export all personal data ───────────────────────────────────────────
+router.get('/export', async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.user!.userId;
+    const doctor = await prisma.doctorProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { email: true, role: true, createdAt: true } },
+        patients: { include: { patient: { select: { nomComplet: true } } } },
+        appointments: { orderBy: { dateTime: 'asc' } },
+        ordonnances: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!doctor) throw new AppError(404, 'Profil médecin introuvable');
+
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      notice: 'Export de vos données personnelles conformément au RGPD.',
+      compte: doctor.user,
+      profil: {
+        nomComplet: doctor.nomComplet,
+        specialite: doctor.specialite,
+        telephone: doctor.telephone,
+        adresse: doctor.adresse,
+        rppsNumber: doctor.rppsNumber,
+        createdAt: doctor.createdAt,
+      },
+      patients: doctor.patients.map(p => ({ id: p.patientId, nomComplet: p.patient.nomComplet })),
+      rendezVous: doctor.appointments,
+      ordonnances: doctor.ordonnances.map(o => ({ id: o.id, createdAt: o.createdAt })),
+    };
+
+    const date = new Date().toISOString().split('T')[0];
+    const nameSafe = doctor.nomComplet
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="mes-donnees-${nameSafe}-${date}.json"`);
+    res.json(exportData);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
